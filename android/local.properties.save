@@ -1,0 +1,7 @@
+sdk.dir=/path/to/your/android/sdk
+:U
+
+sdk.dir=/home/joao/Android/Sdk
+:O
+:X
+
