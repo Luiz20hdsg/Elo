@@ -1,7 +1,7 @@
-
-import React from 'react';
-import { View, TextInput, Text, StyleSheet, TextInputProps } from 'react-native';
+import React, { useState } from 'react';
+import { View, TextInput, Text, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface StyledInputProps extends TextInputProps {
   icon?: string;
@@ -9,7 +9,8 @@ interface StyledInputProps extends TextInputProps {
 }
 
 const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, ...props }) => {
-  const [isFocused, setIsFocused] = React.useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { colors } = useTheme();
 
   const styles = StyleSheet.create({
@@ -37,6 +38,9 @@ const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, ...
       color: colors.text,
       fontSize: 16,
     },
+    eyeIcon: {
+      padding: 5,
+    }
   });
 
   return (
@@ -45,12 +49,16 @@ const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, ...
       <TextInput
         style={styles.input}
         placeholderTextColor={colors.placeholder}
-        secureTextEntry={isPassword}
+        secureTextEntry={isPassword && !isPasswordVisible}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         {...props}
       />
-      {isPassword && <Text style={styles.icon}>👁️</Text>}
+      {isPassword && (
+        <TouchableOpacity style={styles.eyeIcon} onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+          <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color={colors.placeholder} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

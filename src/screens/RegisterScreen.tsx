@@ -18,7 +18,7 @@ type RootStackParamList = {
   Initial: undefined;
   Login: undefined;
   Register: undefined;
-  PostLogin: undefined;
+  Home: undefined;
 };
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<
@@ -84,7 +84,7 @@ const RegisterScreen = () => {
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={styles.header}>
         <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('Login')} 
             style={{ padding: 10, marginLeft: -10 }}
           >
             <Ionicons name="chevron-back" size={28} color={colors.text} />
@@ -125,13 +125,14 @@ const RegisterScreen = () => {
         <View style={styles.buttonContainer}>
           <StyledButton
             title="Cadastrar"
-            onPress={() => navigation.navigate('PostLogin')}
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Home' }] })}
           />
         </View>
       </View>
     </SafeAreaView>
   );
 };
+
 
 
 export default RegisterScreen;

@@ -1,31 +1,278 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Alert,
+  Image,
+  TextInput,
+  ScrollView,
+  ImageBackground,
+  Dimensions,
+  Pressable,
+  ImageSourcePropType,
+} from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+const { width } = Dimensions.get('window');
+const CARD_GAP = 10;
+const CARD_WIDTH = (width - 40 - CARD_GAP) / 2;
+
+type RootStackParamList = {
+  Home: undefined;
+  Main: undefined;
+};
+
+interface HobbyItem {
+  id: string;
+  label: string;
+  image: ImageSourcePropType;
+}
+
+// LISTA DE HOBBIES ATUALIZADA (Com Foods e Correr)
+const HOBBIES_LIST: HobbyItem[] = [
+  { id: 'luta', label: 'Luta', image: require('../assets/images/luta.png') },
+  { id: 'cantar', label: 'Cantar', image: require('../assets/images/cantar.png') },
+  { id: 'basquete', label: 'Basquete', image: require('../assets/images/basquete.png') },
+  { id: 'foods', label: 'Foods', image: { uri: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400' } }, // Novo Item (Comida)
+  { id: 'correr', label: 'Correr', image: { uri: 'https://images.unsplash.com/photo-1502224562085-639556652f33?w=400' } }, // Novo Item (Corrida)
+  { id: 'filmes', label: 'Filmes', image: { uri: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400' } },
+  { id: 'futebol', label: 'Futebol', image: { uri: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400' } },
+  { id: 'volei', label: 'Vôlei', image: { uri: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=400' } },
+  { id: 'crossfit', label: 'Crossfit', image: { uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400' } },
+  { id: 'academia', label: 'Academia', image: { uri: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400' } },
+  { id: 'nadar', label: 'Nadar', image: { uri: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=400' } },
+  { id: 'instrumento', label: 'Música', image: { uri: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400' } },
+  { id: 'ler', label: 'Ler', image: { uri: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400' } },
+  { id: 'viajar', label: 'Viajar', image: { uri: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400' } },
+  { id: 'dancar', label: 'Dançar', image: { uri: 'https://images.unsplash.com/photo-1547153760-18fc86324498?w=400' } },
+  { id: 'trilha', label: 'Trilha', image: { uri: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=400' } },
+  { id: 'praia', label: 'Praia', image: { uri: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400' } },
+  { id: 'cachoeira', label: 'Cachoeira', image: { uri: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=400' } },
+];
 
 const SummaryScreen = () => {
-  const { colors } = useTheme();
+  const { colors, theme, toggleTheme } = useTheme();
+  const [images, setImages] = useState(Array(6).fill(null));
+  const [text, setText] = useState('');
+  const [selectedHobbies, setSelectedHobbies] = useState<string[]>([]);
+  
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handleImagePick = (index: number) => {
+    launchImageLibrary({ mediaType: 'photo' }, (response) => {
+      if (response.assets && response.assets.length > 0) {
+        const newImages = [...images];
+        newImages[index] = response.assets[0].uri;
+        setImages(newImages);
+      }
+    });
+  };
+
+  const toggleHobby = (hobbyId: string) => {
+    if (selectedHobbies.includes(hobbyId)) {
+      setSelectedHobbies((prev) => prev.filter((id) => id !== hobbyId));
+    } else {
+      if (selectedHobbies.length < 3) {
+        setSelectedHobbies((prev) => [...prev, hobbyId]);
+      } else {
+        Alert.alert('Limite atingido', 'Você só pode escolher 3 hobbies.');
+      }
+    }
+  };
+
+  const isButtonDisabled = selectedHobbies.length < 3 || text.length < 10;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.text }]}>Resumo</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+          <Ionicons name="chevron-back" size={28} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={toggleTheme} style={styles.iconButton}>
+          <Ionicons name={theme === 'dark' ? 'sunny' : 'moon'} size={24} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={[styles.title, { color: colors.text }]}>Suas fotos</Text>
+        <View style={styles.gridPhotos}>
+          <View style={styles.rowPhotos}>
+            {[0, 1, 2].map((index) => (
+              <TouchableOpacity key={index} style={[styles.boxPhoto, { backgroundColor: theme === 'dark' ? '#333' : '#e0e0e0' }]} onPress={() => handleImagePick(index)}>
+                {images[index] ? <Image source={{ uri: images[index] }} style={styles.imagePhoto} /> : <Ionicons name="add" size={30} color="#888" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.rowPhotos}>
+            {[3, 4, 5].map((index) => (
+              <TouchableOpacity key={index} style={[styles.boxPhoto, { backgroundColor: theme === 'dark' ? '#333' : '#e0e0e0' }]} onPress={() => handleImagePick(index)}>
+                {images[index] ? <Image source={{ uri: images[index] }} style={styles.imagePhoto} /> : <Ionicons name="add" size={30} color="#888" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Bio</Text>
+        <TextInput
+          style={[styles.input, { color: colors.text || '#000' || '#ccc', backgroundColor: theme === 'dark' ? '#1f1f1f' : '#f9f9f9' }]}
+          onChangeText={setText}
+          value={text}
+          placeholder="Escreva algo sobre você..."
+          placeholderTextColor="#888"
+          multiline
+        />
+
+        <View style={styles.hobbiesContainer}>
+          <View style={styles.hobbiesHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
+              Seus Hobbies
+            </Text>
+            <Text style={{ color: selectedHobbies.length === 3 ? '#4CAF50' : '#888', fontWeight: 'bold' }}>
+              {selectedHobbies.length}/3
+            </Text>
+          </View>
+          <Text style={{ color: '#888', marginBottom: 15 }}>Selecione o que você mais ama fazer.</Text>
+
+          <View style={styles.hobbiesGrid}>
+            {HOBBIES_LIST.map((hobby) => {
+              const isSelected = selectedHobbies.includes(hobby.id);
+              
+              return (
+                <Pressable
+                  key={hobby.id}
+                  onPress={() => toggleHobby(hobby.id)}
+                  style={({ pressed }) => [
+                    styles.hobbyCard,
+                    { 
+                      borderWidth: 3, 
+                      borderColor: isSelected ? '#4CAF50' : 'transparent' 
+                    },
+                    pressed && { transform: [{ scale: 1.05 }] }
+                  ]}
+                >
+                  {({ pressed }) => (
+                    <ImageBackground
+                      source={hobby.image}
+                      style={styles.cardImage}
+                      imageStyle={{ borderRadius: 12 }}
+                      resizeMode="cover"
+                    >
+                      <View style={[
+                        styles.cardOverlay,
+                        isSelected && { backgroundColor: 'rgba(0,0,0,0.6)' },
+                        pressed && !isSelected && { backgroundColor: 'rgba(0,0,0,0.5)' }
+                      ]}>
+                        {isSelected && (
+                          <View style={styles.checkIcon}>
+                            <Ionicons name="checkmark-circle" size={32} color="#4CAF50" />
+                          </View>
+                        )}
+                        <Text style={styles.cardText}>{hobby.label}</Text>
+                      </View>
+                    </ImageBackground>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={{ height: 60 }} />
+      </ScrollView>
+      <View style={styles.finishButtonContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Main')}
+          disabled={isButtonDisabled}
+          style={[styles.finishButton, isButtonDisabled && styles.disabledButton]}
+        >
+          <Text style={styles.finishButtonText}>Concluir</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingTop: 60, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10
   },
-  content: {
+  iconButton: { padding: 8, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 20 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 120, paddingBottom: 100 },
+  title: { fontSize: 28, fontWeight: '800', marginBottom: 15 },
+  
+  gridPhotos: { marginBottom: 30 },
+  rowPhotos: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  boxPhoto: { width: '31%', aspectRatio: 1, borderRadius: 12, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  imagePhoto: { width: '100%', height: '100%' },
+
+  sectionTitle: { fontSize: 22, fontWeight: '700', marginTop: 10, marginBottom: 10 },
+  input: { minHeight: 80, borderWidth: 1, borderRadius: 12, padding: 15, fontSize: 16, textAlignVertical: 'top' },
+
+  hobbiesContainer: { marginTop: 30 },
+  hobbiesHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  hobbiesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  
+  hobbyCard: {
+    width: CARD_WIDTH,
+    height: 100,
+    marginBottom: CARD_GAP,
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  cardImage: { width: '100%', height: '100%', justifyContent: 'flex-end' },
+  cardOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    borderRadius: 12,
   },
-  title: {
-    fontSize: 28,
+  cardText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
+    zIndex: 2,
+  },
+  checkIcon: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    zIndex: 3,
+  },
+  finishButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    backgroundColor: 'transparent',
+  },
+  finishButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#a5d6a7',
+  },
+  finishButtonText: {
+    color: 'white',
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });

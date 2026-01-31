@@ -8,6 +8,8 @@ interface ThemeColors {
   placeholder: string;
   inputBackground: string;
   card: string;
+  disabled: string;
+  disabledText: string;
 }
 
 // Define the context value
@@ -26,14 +28,18 @@ const themes = {
     placeholder: '#A9A9A9',
     inputBackground: '#F0F0F0',
     card: '#F0F0F0',
+    disabled: '#D3D3D3',
+    disabledText: '#A9A9A9',
   },
   dark: {
-    background: '#121212',
+    background: '#000000',
     text: '#FFFFFF',
     primary: '#1DB954',
     placeholder: '#FFFFFF',
     inputBackground: '#333333',
     card: '#282828',
+    disabled: '#535353',
+    disabledText: '#A9A9A9',
   },
 };
 

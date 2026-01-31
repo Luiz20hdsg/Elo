@@ -1,67 +1,283 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  StatusBar,
+  ScrollView,
+  TextInput,
+  Dimensions,
+} from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import StyledButton from '../components/StyledButton';
 
 type RootStackParamList = {
-  Home: undefined;
+  PostLogin: undefined;
   Initial: undefined;
+  SummaryScreen: undefined;
+  RegisterScreen: undefined;
 };
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<
+type PostLoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'Home'
+  'PostLogin',
+  'SummaryScreen'
 >;
 
-const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) => {
+// --- MUDANÇA 1: Ajuste para visual mais "fino" ---
+const { width } = Dimensions.get('window');
+const RULER_TICK_WIDTH = 14;
+const MIN_HEIGHT = 100;
+const MAX_HEIGHT = 250;
+const INITIAL_HEIGHT = 170;
+
+const PostLoginScreen = ({
+  navigation,
+}: {
+  navigation: PostLoginScreenNavigationProp;
+}) => {
   const { colors, theme, toggleTheme } = useTheme();
+  const [age, setAge] = useState('');
+  const [height, setHeight] = useState(INITIAL_HEIGHT);
+  const [gender, setGender] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Cor base para a régua (adapta ao tema)
+  const rulerColor = theme === 'dark' ? '#FFFFFF' : '#000000';
 
   const handleLogout = () => {
     navigation.navigate('Initial');
   };
 
+  useEffect(() => {
+    if (scrollRef.current) {
+      setTimeout(() => {
+        const initialOffset = (INITIAL_HEIGHT - MIN_HEIGHT) * RULER_TICK_WIDTH;
+        scrollRef.current?.scrollTo({ x: initialOffset, animated: false });
+      }, 100);
+    }
+  }, []);
+
+  const renderRuler = () => {
+    const ruler = [];
+    for (let i = MIN_HEIGHT; i <= MAX_HEIGHT; i++) {
+      const isTen = i % 10 === 0;
+      const isFive = i % 5 === 0;
+
+      ruler.push(
+        <View key={i} style={[styles.rulerTick, { width: RULER_TICK_WIDTH }]}>
+          <View
+            style={[
+              styles.rulerLine,
+              {
+                backgroundColor: rulerColor,
+                opacity: isTen ? 1 : isFive ? 0.6 : 0.2,
+
+                height: isTen ? 40 : isFive ? 25 : 12,
+                width: isTen ? 2 : 1.5, // Traços levemente arredondados
+                borderRadius: 2,
+              },
+            ]}
+          />
+          {isTen && (
+            // Texto do número um pouco menor e mais sutil
+            <Text
+              style={[styles.rulerText, { color: colors.text, opacity: 0.8 }]}
+            >
+              {i}
+            </Text>
+          )}
+        </View>,
+      );
+    }
+    return ruler;
+  };
+
+  const handleScroll = (event: {
+    nativeEvent: { contentOffset: { x: number } };
+  }) => {
+    const position = event.nativeEvent.contentOffset.x;
+    const index = Math.round(position / RULER_TICK_WIDTH);
+    const newHeight = MIN_HEIGHT + index;
+
+    if (newHeight >= MIN_HEIGHT && newHeight <= MAX_HEIGHT) {
+      setHeight(newHeight);
+    }
+  };
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <StatusBar
+        barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+      />
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("RegisterScreen")}
+          style={{ padding: 10, marginLeft: -10 }}
+        >
+          <Ionicons name="chevron-back" size={28} color={colors.text} />
+        </TouchableOpacity>
         <View>
-          <Text style={[styles.title, { color: colors.text }]}>Olá, João</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Quase lá!</Text>
         </View>
-        <View style={{flexDirection: 'row'}}>
+        <View style={{ flexDirection: 'row' }}>
           <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
-            <Ionicons name={theme === 'dark' ? 'sunny' : 'moon'} size={24} color={colors.text} />
+            <Ionicons
+              name={theme === 'dark' ? 'sunny' : 'moon'}
+              size={24}
+              color={colors.text}
+            />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout} style={{ padding: 10 }}>
             <Icon name="logout" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
+
       <View style={styles.content}>
-        <Text style={{color: colors.text}}>Bem-vindo à HomeScreen!</Text>
-      </View>
-      <View style={[styles.bottomNav, { backgroundColor: colors.card }]}>
-        <TouchableOpacity style={styles.navItem}>
-          <Icon name="home" size={30} color={colors.primary} />
-          <Text style={[styles.navText, { color: colors.primary }]}>Início</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Icon name="account-group-outline" size={30} color={colors.text} />
-          <Text style={[styles.navText, { color: colors.text }]}>Pessoas</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Icon name="chat-outline" size={30} color={colors.text} />
-          <Text style={[styles.navText, { color: colors.text }]}>Conversas</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Icon name="account-outline" size={30} color={colors.text} />
-          <Text style={[styles.navText, { color: colors.text }]}>Perfil</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Icon name="cog-outline" size={30} color={colors.text} />
-          <Text style={[styles.navText, { color: colors.text }]}>Ajustes</Text>
-        </TouchableOpacity>
+        <Text style={[styles.question, { color: colors.text }]}>
+          Qual a sua idade?
+        </Text>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              color: colors.text,
+              borderColor: colors.primary,
+              backgroundColor: colors.inputBackground,
+            },
+          ]}
+          placeholder="Sua idade"
+          placeholderTextColor={colors.placeholder}
+          keyboardType="numeric"
+          onChangeText={setAge}
+          value={age}
+        />
+
+        <Text style={[styles.question, { color: colors.text, marginTop: 40 }]}>
+          Você é:
+        </Text>
+        <View style={styles.genderContainer}>
+          <TouchableOpacity
+            style={[
+              styles.genderButton,
+              gender === 'homem'
+                ? { backgroundColor: colors.primary }
+                : { backgroundColor: colors.inputBackground },
+            ]}
+            onPress={() => setGender('homem')}
+          >
+            <Text
+              style={[
+                styles.genderButtonText,
+                gender === 'homem'
+                  ? { color: colors.background }
+                  : { color: colors.text },
+              ]}
+            >
+              Homem
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.genderButton,
+              gender === 'mulher'
+                ? { backgroundColor: colors.primary }
+                : { backgroundColor: colors.inputBackground },
+            ]}
+            onPress={() => setGender('mulher')}
+          >
+            <Text
+              style={[
+                styles.genderButtonText,
+                gender === 'mulher'
+                  ? { color: colors.background }
+                  : { color: colors.text },
+              ]}
+            >
+              Mulher
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.question, { color: colors.text, marginTop: 40 }]}>
+          Qual a sua altura?
+        </Text>
+
+        <View style={styles.rulerContainer}>
+          {/* Número Grande em Destaque */}
+          <Text style={[styles.heightText, { color: colors.primary }]}>
+            {height}{' '}
+            <Text style={{ fontSize: 20, fontWeight: 'normal' }}>cm</Text>
+          </Text>
+
+          <View style={styles.rulerWrapper}>
+            {/* --- MUDANÇA 3: Marcador Central com Seta --- */}
+            <View style={styles.indicatorWrapper}>
+              <Ionicons
+                name="caret-down"
+                size={24}
+                color={colors.primary}
+                style={{ marginTop: -18 }}
+              />
+              <View
+                style={[
+                  styles.indicatorLine,
+                  { backgroundColor: colors.primary },
+                ]}
+              />
+            </View>
+
+            {/* --- MUDANÇA 4: Efeito Fade nas Laterais (Neblina) --- */}
+            <View
+              style={[
+                styles.fade,
+                styles.fadeLeft,
+                { backgroundColor: colors.background },
+              ]}
+              pointerEvents="none"
+            />
+            <View
+              style={[
+                styles.fade,
+                styles.fadeRight,
+                { backgroundColor: colors.background },
+              ]}
+              pointerEvents="none"
+            />
+
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.ruler}
+              contentContainerStyle={{
+                paddingHorizontal: width / 2 - RULER_TICK_WIDTH / 2,
+                alignItems: 'flex-end',
+              }}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              snapToInterval={RULER_TICK_WIDTH}
+              decelerationRate="fast"
+              bounces={false}
+            >
+              {renderRuler()}
+            </ScrollView>
+          </View>
+        </View>
+
+        <StyledButton
+          title="Avançar"
+          onPress={() => navigation.navigate('SummaryScreen')}
+        />
       </View>
     </SafeAreaView>
   );
@@ -83,26 +299,104 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 20,
   },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
+  question: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  rulerContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  heightText: {
+    fontSize: 56, // Aumentei para destaque
+    fontWeight: 'bold',
+    marginBottom: 20,
+    letterSpacing: -1,
+  },
+  rulerWrapper: {
+    height: 100,
+    width: '100%',
+    justifyContent: 'center',
+    position: 'relative',
+    // Linhas sutis para delimitar a área
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderBottomWidth: 1,
+    borderColor: 'rgba(150,150,150,0.1)',
+  },
+  ruler: {
+    height: 100,
+  },
+  rulerTick: {
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    height: 60,
+  },
+  rulerLine: {
+    marginBottom: 25, // Afastei um pouco do número
+  },
+  rulerText: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  navItem: {
-    alignItems: 'center',
-  },
-  navText: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+  // --- Novos Estilos do Marcador ---
+  indicatorWrapper: {
+    position: 'absolute',
+    left: '50%',
+    top: 0,
+    bottom: 0,
+    marginLeft: -12, // Centraliza o ícone (24/2)
+    width: 24,
+    alignItems: 'center',
+    zIndex: 10,
+    justifyContent: 'flex-start', // Começa do topo
+  },
+  indicatorLine: {
+    width: 3,
+    height: 45,
+    borderRadius: 2,
+    marginTop: -5, // Conecta com a ponta da seta
+  },
+  // --- Novos Estilos de Fade ---
+  fade: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 60,
+    zIndex: 5,
+    opacity: 0.9, // Aumentar para esconder mais os cantos
+  },
+  fadeLeft: { left: 0 },
+  fadeRight: { right: 0 },
+
+  genderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 40,
+  },
+  genderButton: {
+    paddingVertical: 15,
+    paddingHorizontal: 50,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  genderButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
-export default HomeScreen;
+export default PostLoginScreen;

@@ -7,9 +7,10 @@ interface StyledButtonProps {
   title: string;
   onPress: () => void;
   type?: 'solid' | 'outline';
+  disabled?: boolean;
 }
 
-const StyledButton: React.FC<StyledButtonProps> = ({ title, onPress, type = 'solid' }) => {
+const StyledButton: React.FC<StyledButtonProps> = ({ title, onPress, type = 'solid', disabled }) => {
   const { colors } = useTheme();
 
   const styles = StyleSheet.create({
@@ -40,12 +41,21 @@ const StyledButton: React.FC<StyledButtonProps> = ({ title, onPress, type = 'sol
     outlineText: {
       color: colors.primary,
     },
+    disabledContainer: {
+      backgroundColor: colors.disabled,
+    },
+    disabledText: {
+      color: colors.disabledText,
+    },
   });
 
   const containerStyle: ViewStyle[] = [styles.buttonContainer];
   const textStyle: TextStyle[] = [styles.buttonText];
 
-  if (type === 'solid') {
+  if (disabled) {
+    containerStyle.push(styles.disabledContainer);
+    textStyle.push(styles.disabledText);
+  } else if (type === 'solid') {
     containerStyle.push(styles.solidContainer);
     textStyle.push(styles.solidText);
   } else {
@@ -54,7 +64,7 @@ const StyledButton: React.FC<StyledButtonProps> = ({ title, onPress, type = 'sol
   }
 
   return (
-    <TouchableOpacity onPress={onPress} style={containerStyle}>
+    <TouchableOpacity onPress={onPress} style={containerStyle} disabled={disabled}>
       <Text style={textStyle}>{title}</Text>
     </TouchableOpacity>
   );

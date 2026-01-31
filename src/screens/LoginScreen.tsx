@@ -19,9 +19,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type RootStackParamList = {
   Initial: undefined;
   Login: undefined;
-  Register: undefined;
+  RegisterScreen: undefined;
   Home: undefined;
-  PostLogin: undefined;
+  ForgotPassword: undefined;
+  Main: undefined;
 };
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
@@ -168,7 +169,7 @@ const LoginScreen = () => {
 
         <StyledInput icon="🔒" placeholder="Senha" isPassword={true} />
 
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
           <Text style={styles.forgotPassword}>Esqueci minha senha</Text>
         </TouchableOpacity>
 
@@ -176,12 +177,12 @@ const LoginScreen = () => {
         <View style={styles.buttonContainer}>
           <StyledButton
             title="Entrar"
-            onPress={() => navigation.navigate('Home')}
+            onPress={() => navigation.navigate('Main')}
           />
           <StyledButton
             title="Criar Conta"
             type="outline"
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => navigation.navigate('RegisterScreen')}
           />
         </View>
 
@@ -218,5 +219,6 @@ const LoginScreen = () => {
     </SafeAreaView>
   );
 };
+
 
 export default LoginScreen;
