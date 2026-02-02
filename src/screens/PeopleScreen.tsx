@@ -9,8 +9,9 @@ import {
   ScrollView,
   Image,
   Dimensions,
-  Animated, // Importado para animação
-  Easing
+  Animated,
+  Modal,
+  TextInput
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -26,15 +27,32 @@ type RootStackParamList = {
 
 type PeopleScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-// --- MOCK DATA (Lista de Perfis) ---
 const MY_HOBBIES = ['Café', 'Viagem', 'Academia', 'Netflix'];
+
+const ALL_RELIGIONS = [
+  'Assembleia de Deus',
+  'Batista',
+  'Presbiteriana',
+  'Metodista',
+  'Luterana',
+  'Adventista',
+  'Universal',
+  'Congregacional',
+  'Quadrangular',
+  'Deus é Amor',
+  'Bola de Neve',
+  'Lagoinha',
+  'Outros'
+];
+
+const ALL_HOBBIES = ['Café', 'Viagem', 'Academia', 'Netflix', 'Games', 'Música', 'Dança', 'Leitura', 'Culinária'];
 
 const MOCK_PROFILES = [
   {
     id: '1',
     name: 'Mariana',
     age: 23,
-    distance: '2 km de distância',
+    distance: '2 km',
     bio: 'Apaixonada por café, design e trilhas no fim de semana. ☕✨',
     height: '1.65m',
     job: 'Designer UX/UI',
@@ -49,7 +67,7 @@ const MOCK_PROFILES = [
     id: '2',
     name: 'Carlos',
     age: 25,
-    distance: '5 km de distância',
+    distance: '5 km',
     bio: 'Engenheiro de dia, gamer de noite. Bora fechar esse duo? 🎮',
     height: '1.80m',
     job: 'Eng. Civil',
@@ -64,7 +82,7 @@ const MOCK_PROFILES = [
     id: '3',
     name: 'Fernanda',
     age: 22,
-    distance: '10 km de distância',
+    distance: '10 km',
     bio: 'Amo animais e viajar o mundo. 🌎🐶',
     height: '1.70m',
     job: 'Veterinária',
@@ -81,81 +99,91 @@ const PeopleScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<PeopleScreenNavigationProp>();
   
-  // --- Estados de Controle ---
-  const [currentIndex, setCurrentIndex] = useState(0); // Qual perfil está mostrando
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   
-  // --- Refs para Animação e Scroll ---
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [filters, setFilters] = useState({
+    ageMin: '18',
+    ageMax: '30',
+    distance: '50',
+    heightMin: '1.50',
+    hasKids: 'indifferent',
+    religion: '', 
+    selectedHobbies: [] as string[]
+  });
+
   const scrollRef = useRef<ScrollView>(null);
   const mainScrollRef = useRef<ScrollView>(null);
   
-  // Valor animado para o coração (escala 0 a 1)
   const heartScale = useRef(new Animated.Value(0)).current; 
   const heartOpacity = useRef(new Animated.Value(0)).current;
+  const superLikeScale = useRef(new Animated.Value(0)).current;
+  const superLikeOpacity = useRef(new Animated.Value(0)).current;
 
-  // Dados do perfil atual (seguro contra index out of bounds)
   const currentProfile = MOCK_PROFILES[currentIndex];
 
   const handleLogout = () => {
     navigation.navigate('Initial');
   };
 
-  // --- Função para passar para o próximo (Ação do X e fim do Like) ---
+  const toggleHobbyFilter = (hobby: string) => {
+    setFilters(prev => {
+        const list = prev.selectedHobbies.includes(hobby)
+            ? prev.selectedHobbies.filter(h => h !== hobby)
+            : [...prev.selectedHobbies, hobby];
+        return { ...prev, selectedHobbies: list };
+    });
+  };
+
+  const applyFilters = () => {
+    setFilterVisible(false);
+    console.log("Filtros Aplicados:", filters);
+  };
+
   const nextProfile = () => {
     if (currentIndex < MOCK_PROFILES.length) {
       setCurrentIndex(prev => prev + 1);
-      setCurrentPhotoIndex(0); // Reseta o carrossel de fotos
-      
-      // Reseta o scroll da página para o topo
-      if (mainScrollRef.current) {
-        mainScrollRef.current.scrollTo({ y: 0, animated: false });
-      }
-      // Reseta o scroll das fotos para o inicio
-      if (scrollRef.current) {
-        scrollRef.current.scrollTo({ x: 0, animated: false });
-      }
+      setCurrentPhotoIndex(0);
+      if (mainScrollRef.current) mainScrollRef.current.scrollTo({ y: 0, animated: false });
+      if (scrollRef.current) scrollRef.current.scrollTo({ x: 0, animated: false });
     }
   };
 
-  // --- Ação de LIKE (Coração) ---
   const handleLike = () => {
-    // 1. Inicia animação
     Animated.parallel([
-      Animated.spring(heartScale, {
-        toValue: 1,
-        friction: 4,
-        useNativeDriver: true,
-      }),
-      Animated.timing(heartOpacity, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      })
+      Animated.spring(heartScale, { toValue: 1, friction: 4, useNativeDriver: true }),
+      Animated.timing(heartOpacity, { toValue: 1, duration: 100, useNativeDriver: true })
     ]).start(() => {
-      // 2. Espera um pouquinho mostrando o coração
       setTimeout(() => {
-        // 3. Some com o coração e troca o perfil
-        Animated.timing(heartOpacity, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }).start(() => {
-            heartScale.setValue(0); // Reseta escala para o próximo
+        Animated.timing(heartOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+            heartScale.setValue(0);
             nextProfile();
         });
       }, 600);
     });
   };
 
-  // --- Ação de PASS (X) ---
+  const handleSuperLike = () => {
+    Animated.parallel([
+      Animated.spring(superLikeScale, { toValue: 1, friction: 4, useNativeDriver: true }),
+      Animated.timing(superLikeOpacity, { toValue: 1, duration: 100, useNativeDriver: true })
+    ]).start(() => {
+      setTimeout(() => {
+        Animated.timing(superLikeOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+            superLikeScale.setValue(0);
+            nextProfile();
+        });
+      }, 600);
+    });
+  };
+
   const handlePass = () => {
     nextProfile();
   };
 
-  // --- Lógica do Carrossel Automático ---
   useEffect(() => {
     if (!currentProfile) return;
-
     const interval = setInterval(() => {
       const nextIndex = (currentPhotoIndex + 1) % currentProfile.photos.length;
       setCurrentPhotoIndex(nextIndex);
@@ -175,7 +203,6 @@ const PeopleScreen = () => {
     }
   };
 
-  // --- Lógica de Interesses ---
   const getInterests = () => {
     if (!currentProfile) return { common: [], other: [] };
     const common = currentProfile.hobbies.filter(h => MY_HOBBIES.includes(h));
@@ -195,80 +222,69 @@ const PeopleScreen = () => {
     },
     headerTitle: { fontSize: 22, fontWeight: 'bold', color: colors.text },
     container: { flex: 1 },
-    scrollContent: { paddingBottom: 100 },
+    scrollContent: { paddingBottom: 120 },
     
-    // --- ESTILOS DO CARD ---
     photoContainer: { height: height * 0.55, position: 'relative' },
     photo: { width: width, height: '100%', resizeMode: 'cover' },
-    pagination: {
-      position: 'absolute', top: 15, left: 0, right: 0,
-      flexDirection: 'row', justifyContent: 'center', gap: 5,
-    },
-    paginationDot: {
-      width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    },
+    pagination: { position: 'absolute', top: 15, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 },
+    paginationDot: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255, 255, 255, 0.3)' },
     paginationDotActive: { backgroundColor: '#FFF' },
-
-    infoContainer: {
-      padding: 20, marginTop: -20, backgroundColor: colors.background,
-      borderTopLeftRadius: 30, borderTopRightRadius: 30,
-      shadowColor: "#000", shadowOffset: { width: 0, height: -2 },
-      shadowOpacity: 0.1, shadowRadius: 10, elevation: 5,
-    },
+    
+    infoContainer: { padding: 20, marginTop: -20, backgroundColor: colors.background, borderTopLeftRadius: 30, borderTopRightRadius: 30, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
     nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 },
     nameText: { fontSize: 28, fontWeight: 'bold', color: colors.text },
     ageText: { fontSize: 24, fontWeight: 'normal' },
     locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     locationText: { color: colors.placeholder, marginLeft: 5, fontSize: 14 },
-
     detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 25 },
-    detailChip: {
-      flexDirection: 'row', alignItems: 'center',
-      backgroundColor: theme === 'dark' ? '#1E1E1E' : '#F0F0F0',
-      paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20,
-      borderWidth: 1, borderColor: theme === 'dark' ? '#333' : '#E0E0E0',
-    },
+    detailChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme === 'dark' ? '#1E1E1E' : '#F0F0F0', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: theme === 'dark' ? '#333' : '#E0E0E0' },
     detailText: { color: colors.text, marginLeft: 6, fontSize: 13, fontWeight: '500' },
-
     sectionTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 10, marginTop: 10 },
     bioText: { fontSize: 15, color: colors.text, lineHeight: 22, opacity: 0.8, marginBottom: 25 },
-
     hobbiesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    hobbyChip: {
-      paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20,
-      borderWidth: 1, borderColor: colors.primary,
-    },
+    hobbyChip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.primary },
     hobbyText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
     commonHobbyChip: { backgroundColor: colors.primary, borderColor: colors.primary },
     commonHobbyText: { color: '#FFF', fontWeight: 'bold' },
-
-    actionButtonsContainer: {
-      position: 'absolute', bottom: 20, left: 0, right: 0,
-      flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 30,
-    },
-    actionButton: {
-      width: 64, height: 64, borderRadius: 32,
-      justifyContent: 'center', alignItems: 'center',
-      shadowColor: "#000", shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8,
-      backgroundColor: theme === 'dark' ? '#2A2A2A' : '#FFF',
-    },
+    
+    actionButtonsContainer: { position: 'absolute', bottom: 20, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 20 },
+    actionButton: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8, backgroundColor: theme === 'dark' ? '#2A2A2A' : '#FFF' },
     passButton: { borderWidth: 1, borderColor: '#FF4444' },
     likeButton: { backgroundColor: colors.primary },
+    superLikeButton: { width: 75, height: 75, borderRadius: 37.5, backgroundColor: '#FFF', borderWidth: 3, borderColor: '#FFD700', justifyContent: 'center', alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 5, elevation: 10, marginBottom: 5 },
+    heartOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 100, pointerEvents: 'none' },
+    emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
 
-    // --- ESTILO DA ANIMAÇÃO DE CORAÇÃO ---
-    heartOverlay: {
-        position: 'absolute',
-        top: 0, left: 0, right: 0, bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 100, // Fica por cima de tudo
-        pointerEvents: 'none' // Permite clicar através dele se necessário
-    },
-    emptyState: {
-        flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20
-    }
+    modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+    modalContent: { backgroundColor: colors.background, borderTopLeftRadius: 25, borderTopRightRadius: 25, height: '85%', padding: 20 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: colors.inputBackground, paddingBottom: 15 },
+    modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+    filterSection: { marginBottom: 25 },
+    filterLabel: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 12 },
+    
+    rowInputs: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+    inputGroup: { flex: 1 },
+    inputLabelSmall: { fontSize: 12, color: colors.placeholder, marginBottom: 5 },
+    inputBox: { backgroundColor: theme === 'dark' ? '#1E1E1E' : '#F5F5F5', borderRadius: 10, padding: 12, color: colors.text, fontSize: 16, borderWidth: 1, borderColor: colors.inputBackground, textAlign: 'center' },
+    
+    chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    selectableChip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.inputBackground, backgroundColor: 'transparent' },
+    selectableChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    selectableChipText: { color: colors.text, fontWeight: '500' },
+    selectableChipTextActive: { color: '#FFF', fontWeight: 'bold' },
+
+    applyButton: { backgroundColor: colors.primary, padding: 15, borderRadius: 30, alignItems: 'center', marginTop: 10, marginBottom: 30 },
+    applyButtonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' }
   });
+
+  const SelectableChip = ({ label, active, onPress }: { label: string, active: boolean, onPress: () => void }) => (
+    <TouchableOpacity 
+        style={[styles.selectableChip, active && styles.selectableChipActive]} 
+        onPress={onPress}
+    >
+        <Text style={[styles.selectableChipText, active && styles.selectableChipTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -276,7 +292,12 @@ const PeopleScreen = () => {
       
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Pessoas</Text>
-        <View style={{flexDirection: 'row'}}>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          
+          <TouchableOpacity onPress={() => setFilterVisible(true)} style={{ padding: 10 }}>
+             <Ionicons name="options-outline" size={24} color={colors.text} />
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
             <Ionicons name={theme === 'dark' ? 'sunny' : 'moon'} size={24} color={colors.text} />
           </TouchableOpacity>
@@ -287,24 +308,17 @@ const PeopleScreen = () => {
       </View>
 
       <View style={styles.container}>
-        {/* --- ANIMAÇÃO DE CORAÇÃO OVERLAY --- */}
         <Animated.View style={[styles.heartOverlay, { opacity: heartOpacity, transform: [{ scale: heartScale }] }]}>
             <Ionicons name="heart" size={150} color={colors.primary} />
         </Animated.View>
+        <Animated.View style={[styles.heartOverlay, { opacity: superLikeOpacity, transform: [{ scale: superLikeScale }] }]}>
+            <Ionicons name="heart" size={180} color="#FFD700" />
+        </Animated.View>
 
         {currentProfile ? (
-             <ScrollView 
-                ref={mainScrollRef}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Fotos */}
+             <ScrollView ref={mainScrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.photoContainer}>
-                    <ScrollView 
-                        ref={scrollRef}
-                        horizontal pagingEnabled showsHorizontalScrollIndicator={false}
-                        onScroll={handleScroll} scrollEventThrottle={16}
-                    >
+                    <ScrollView ref={scrollRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={handleScroll} scrollEventThrottle={16}>
                         {currentProfile.photos.map((photo, index) => (
                             <Image key={index} source={{ uri: photo }} style={styles.photo} />
                         ))}
@@ -316,7 +330,6 @@ const PeopleScreen = () => {
                     </View>
                 </View>
 
-                {/* Info */}
                 <View style={styles.infoContainer}>
                     <View style={styles.nameRow}>
                         <Text style={styles.nameText}>{currentProfile.name}, <Text style={styles.ageText}>{currentProfile.age}</Text></Text>
@@ -344,9 +357,7 @@ const PeopleScreen = () => {
                             </View>
                             <View style={[styles.hobbiesContainer, { marginBottom: 20 }]}>
                                 {common.map((hobby, index) => (
-                                    <View key={index} style={[styles.hobbyChip, styles.commonHobbyChip]}>
-                                        <Text style={[styles.hobbyText, styles.commonHobbyText]}>{hobby}</Text>
-                                    </View>
+                                    <View key={index} style={[styles.hobbyChip, styles.commonHobbyChip]}><Text style={[styles.hobbyText, styles.commonHobbyText]}>{hobby}</Text></View>
                                 ))}
                             </View>
                         </>
@@ -355,15 +366,12 @@ const PeopleScreen = () => {
                     <Text style={styles.sectionTitle}>Interesses</Text>
                     <View style={styles.hobbiesContainer}>
                         {other.map((hobby, index) => (
-                            <View key={index} style={styles.hobbyChip}>
-                                <Text style={styles.hobbyText}>{hobby}</Text>
-                            </View>
+                            <View key={index} style={styles.hobbyChip}><Text style={styles.hobbyText}>{hobby}</Text></View>
                         ))}
                     </View>
                 </View>
             </ScrollView>
         ) : (
-            // --- ESTADO VAZIO (ACABARAM OS PERFIS) ---
             <View style={styles.emptyState}>
                 <View style={[styles.actionButton, {backgroundColor: colors.inputBackground, width: 100, height: 100, borderRadius: 50, marginBottom: 20}]}>
                     <Ionicons name="people-outline" size={50} color={colors.placeholder} />
@@ -372,28 +380,151 @@ const PeopleScreen = () => {
                 <Text style={{color: colors.placeholder, textAlign: 'center', marginTop: 10}}>
                     Volte mais tarde para ver novas pessoas na sua região.
                 </Text>
-                <TouchableOpacity 
-                    onPress={() => setCurrentIndex(0)} 
-                    style={{marginTop: 30, padding: 10}}
-                >
+                <TouchableOpacity onPress={() => setCurrentIndex(0)} style={{marginTop: 30, padding: 10}}>
                     <Text style={{color: colors.primary, fontWeight: 'bold'}}>Recomeçar Demo</Text>
                 </TouchableOpacity>
             </View>
         )}
 
-        {/* Botões só aparecem se tiver perfil */}
         {currentProfile && (
             <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity style={[styles.actionButton, styles.passButton]} onPress={handlePass}>
                     <Ionicons name="close" size={32} color="#FF4444" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.superLikeButton} onPress={handleSuperLike}>
+                    <Ionicons name="heart" size={36} color="#FFD700" />
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.actionButton, styles.likeButton]} onPress={handleLike}>
                     <Ionicons name="heart" size={32} color="#FFF" />
                 </TouchableOpacity>
             </View>
         )}
-
       </View>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterVisible}
+        onRequestClose={() => setFilterVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Filtros</Text>
+                    <TouchableOpacity onPress={() => setFilterVisible(false)}>
+                        <Ionicons name="close" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                </View>
+                
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    
+                    <View style={styles.filterSection}>
+                        <Text style={styles.filterLabel}>Idade</Text>
+                        <View style={styles.rowInputs}>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabelSmall}>De</Text>
+                                <TextInput 
+                                    style={styles.inputBox} 
+                                    keyboardType="numeric" 
+                                    value={filters.ageMin}
+                                    onChangeText={(t) => setFilters({...filters, ageMin: t})}
+                                />
+                            </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabelSmall}>Até</Text>
+                                <TextInput 
+                                    style={styles.inputBox} 
+                                    keyboardType="numeric" 
+                                    value={filters.ageMax}
+                                    onChangeText={(t) => setFilters({...filters, ageMax: t})}
+                                />
+                            </View>
+                        </View>
+                    </View>
+
+                    <View style={styles.rowInputs}>
+                        <View style={[styles.filterSection, {flex: 1}]}>
+                            <Text style={styles.filterLabel}>Distância (km)</Text>
+                            <TextInput 
+                                style={styles.inputBox} 
+                                keyboardType="numeric" 
+                                value={filters.distance}
+                                onChangeText={(t) => setFilters({...filters, distance: t})}
+                            />
+                        </View>
+                        <View style={[styles.filterSection, {flex: 1}]}>
+                            <Text style={styles.filterLabel}>Altura Mín (m)</Text>
+                            <TextInput 
+                                style={styles.inputBox} 
+                                keyboardType="numeric" 
+                                value={filters.heightMin}
+                                onChangeText={(t) => setFilters({...filters, heightMin: t})}
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.filterSection}>
+                        <Text style={styles.filterLabel}>Possui Filhos?</Text>
+                        <View style={styles.chipsRow}>
+                            <SelectableChip 
+                                label="Sim" 
+                                active={filters.hasKids === 'yes'} 
+                                onPress={() => setFilters({...filters, hasKids: 'yes'})} 
+                            />
+                            <SelectableChip 
+                                label="Não" 
+                                active={filters.hasKids === 'no'} 
+                                onPress={() => setFilters({...filters, hasKids: 'no'})} 
+                            />
+                            <SelectableChip 
+                                label="Indiferente" 
+                                active={filters.hasKids === 'indifferent'} 
+                                onPress={() => setFilters({...filters, hasKids: 'indifferent'})} 
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.filterSection}>
+                        <Text style={styles.filterLabel}>Denominação</Text>
+                        <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false} 
+                            contentContainerStyle={{gap: 10}}
+                        >
+                            {ALL_RELIGIONS.map((rel) => (
+                                <SelectableChip 
+                                    key={rel} 
+                                    label={rel} 
+                                    active={filters.religion === rel} 
+                                    onPress={() => setFilters({...filters, religion: rel})} 
+                                />
+                            ))}
+                        </ScrollView>
+                    </View>
+
+                    <View style={styles.filterSection}>
+                        <Text style={styles.filterLabel}>Hobbies / Interesses</Text>
+                        <View style={styles.chipsRow}>
+                            {ALL_HOBBIES.map((hobby) => (
+                                <SelectableChip 
+                                    key={hobby} 
+                                    label={hobby} 
+                                    active={filters.selectedHobbies.includes(hobby)} 
+                                    onPress={() => toggleHobbyFilter(hobby)} 
+                                />
+                            ))}
+                        </View>
+                    </View>
+
+                    <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
+                        <Text style={styles.applyButtonText}>Aplicar Filtros</Text>
+                    </TouchableOpacity>
+
+                </ScrollView>
+            </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };

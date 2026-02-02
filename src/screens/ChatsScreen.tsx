@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // 1. Importe useEffect
 import {
   StyleSheet,
   View,
@@ -8,7 +8,8 @@ import {
   StatusBar,
   ScrollView,
   Image,
-  Dimensions
+  Dimensions,
+  Modal
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -17,14 +18,13 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const { width } = Dimensions.get('window');
 
-// --- Tipagem de Rotas ---
 type RootStackParamList = {
   Initial: undefined;
   Login: undefined;
   Register: undefined;
   Main: undefined;
   ForgotPassword: undefined;
-  ChatDetail: { userId: string; userName: string; userPhoto: string }; // Rota para o chat específico
+  ChatDetail: { userId: string; userName: string; userPhoto: string };
 };
 
 type ChatsScreenNavigationProp = NativeStackNavigationProp<
@@ -32,7 +32,7 @@ type ChatsScreenNavigationProp = NativeStackNavigationProp<
   'Main'
 >;
 
-// --- DADOS FAKE (MOCKS) ---
+// --- MOCKS ---
 const MATCHES_DATA = [
   { id: '1', name: 'Ana', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' },
   { id: '2', name: 'Bia', photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400' },
@@ -72,19 +72,26 @@ const ChatsScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<ChatsScreenNavigationProp>();
 
+  const [modalVisible, setModalVisible] = useState(false);
+
   const handleLogout = () => {
     navigation.navigate('Initial');
   };
 
- // Função para abrir o chat
- const openChat = (user: { id: string; name: string; photo: string }) => {
-  // Agora enviamos os dados reais para a tela de chat
-  navigation.navigate('ChatDetail', { 
-    userId: user.id, 
-    userName: user.name, 
-    userPhoto: user.photo 
-  });
-};
+  // --- MUDANÇA AQUI: useEffect roda apenas UMA vez na montagem ---
+  useEffect(() => {
+    setModalVisible(true);
+  }, []); 
+  // O array vazio [] garante que só roda quando a tela é criada.
+  // Se o usuário trocar de aba e voltar, a tela ainda está na memória e não roda de novo.
+
+  const handleChatPress = (user: { id: string; name: string; photo: string }) => {
+    navigation.navigate('ChatDetail', { 
+        userId: user.id, 
+        userName: user.name, 
+        userPhoto: user.photo 
+    });
+  };
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -107,7 +114,7 @@ const ChatsScreen = () => {
       color: colors.text,
     },
     
-    // --- Seção de Matches (Superior) ---
+    // Matches
     matchesSection: {
         paddingVertical: 20,
         borderBottomWidth: 1,
@@ -135,8 +142,8 @@ const ChatsScreen = () => {
         height: 64,
         borderRadius: 32,
         borderWidth: 2,
-        borderColor: colors.primary, // Borda verde indicando "Match"
-        padding: 2, // Espaço entre borda e foto
+        borderColor: colors.primary, 
+        padding: 2, 
         marginBottom: 5,
     },
     matchImage: {
@@ -150,7 +157,7 @@ const ChatsScreen = () => {
         fontWeight: '600',
     },
 
-    // --- Lista de Conversas (Inferior) ---
+    // Chat List
     chatList: {
         flex: 1,
     },
@@ -191,7 +198,7 @@ const ChatsScreen = () => {
     },
     lastMessage: {
         fontSize: 14,
-        color: colors.placeholder, // Cor cinza para mensagem lida/antiga
+        color: colors.placeholder, 
         flex: 1,
         marginRight: 10,
     },
@@ -210,8 +217,59 @@ const ChatsScreen = () => {
         fontWeight: 'bold',
     },
     messageUnreadStyle: {
-        color: colors.text, // Texto mais claro se não leu
+        color: colors.text, 
         fontWeight: '600',
+    },
+
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        width: width * 0.85,
+        backgroundColor: theme === 'dark' ? '#1E1E1E' : '#FFFFFF',
+        borderRadius: 20,
+        padding: 25,
+        alignItems: 'center',
+        position: 'relative',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 10,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 15,
+        right: 15,
+        padding: 5,
+        zIndex: 10,
+    },
+    modalIconContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(76, 175, 80, 0.1)', 
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 15,
+        marginTop: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: colors.text,
+        marginBottom: 10,
+    },
+    modalText: {
+        fontSize: 15,
+        color: colors.placeholder,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 20,
     }
   });
 
@@ -238,7 +296,7 @@ const ChatsScreen = () => {
 
       <ScrollView style={{flex: 1}}>
         
-        {/* --- SEÇÃO 1: MATCHES RECENTES (Horizontal) --- */}
+        {/* MATCHES */}
         <View style={styles.matchesSection}>
             <Text style={styles.sectionTitle}>Seus Matches</Text>
             <ScrollView 
@@ -246,7 +304,6 @@ const ChatsScreen = () => {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.matchesScroll}
             >
-                {/* Item Especial: Likes (Blur/Gold) - Exemplo de feature paga */}
                 <TouchableOpacity style={styles.matchItem}>
                     <View style={[styles.matchImageContainer, { borderColor: '#FFD700', backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }]}>
                         <Ionicons name="heart" size={24} color="#FFD700" />
@@ -254,12 +311,11 @@ const ChatsScreen = () => {
                     <Text style={[styles.matchName, {color: '#FFD700'}]}>Likes</Text>
                 </TouchableOpacity>
 
-                {/* Lista de Matches */}
                 {MATCHES_DATA.map((match) => (
                     <TouchableOpacity 
                         key={match.id} 
                         style={styles.matchItem}
-                        onPress={() => openChat(match)}
+                        onPress={() => handleChatPress(match)}
                     >
                         <View style={styles.matchImageContainer}>
                             <Image source={{ uri: match.photo }} style={styles.matchImage} />
@@ -270,7 +326,7 @@ const ChatsScreen = () => {
             </ScrollView>
         </View>
 
-        {/* --- SEÇÃO 2: LISTA DE MENSAGENS (Vertical) --- */}
+        {/* CHATS LIST */}
         <View style={styles.chatList}>
             <Text style={[styles.sectionTitle, {marginTop: 20}]}>Mensagens</Text>
             
@@ -278,13 +334,11 @@ const ChatsScreen = () => {
                 <TouchableOpacity 
                     key={chat.id} 
                     style={styles.chatItem}
-                    onPress={() => openChat(chat)}
+                    onPress={() => handleChatPress(chat)}
                     activeOpacity={0.7}
                 >
-                    {/* Foto da Conversa */}
                     <Image source={{ uri: chat.photo }} style={styles.chatAvatar} />
                     
-                    {/* Conteúdo Texto */}
                     <View style={styles.chatContent}>
                         <View style={styles.chatHeader}>
                             <Text style={styles.chatName}>{chat.name}</Text>
@@ -307,7 +361,6 @@ const ChatsScreen = () => {
                                 {chat.lastMessage}
                             </Text>
                             
-                            {/* Badge de Não Lida */}
                             {chat.unread > 0 && (
                                 <View style={styles.unreadBadge}>
                                     <Text style={styles.unreadText}>{chat.unread}</Text>
@@ -320,6 +373,38 @@ const ChatsScreen = () => {
         </View>
 
       </ScrollView>
+
+      {/* --- MODAL DE AVISO (Abre apenas na 1ª vez via useEffect) --- */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+                {/* Botão X */}
+                <TouchableOpacity 
+                    style={styles.closeButton} 
+                    onPress={() => setModalVisible(false)}
+                >
+                    <Ionicons name="close" size={24} color={colors.text} />
+                </TouchableOpacity>
+
+                <View style={styles.modalIconContainer}>
+                    <Ionicons name="shield-checkmark-outline" size={32} color={colors.primary} />
+                </View>
+
+                <Text style={styles.modalTitle}>Dica Importante</Text>
+                
+                <Text style={styles.modalText}>
+                    Dica: Favor ser respeitoso e ao começar a conversar com intenção com uma pessoa 
+                    <Text style={{fontWeight: 'bold', color: colors.primary}}> seja íntegro priorizando ela.</Text>
+                </Text>
+            </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };

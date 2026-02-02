@@ -87,25 +87,26 @@ const ProfileScreen = () => {
 
   const featuresData = {
     plus: [
-      { text: 'Tenha acesso ao desempenho das fotos', included: true },
+      { text: 'Ganhe destaque máximo no feed', included: true },
       { text: 'Potencialize suas curtidas', included: true },
-      { text: 'Ganhe destaque no feed', included: true },
-      { text: 'Veja quem curtiu você', included: true },
-      { text: 'Modo viagem global', included: true },
+      { text: 'Envie curtidas e comentários ilimitados', included: true },
+      { text: 'Ver quem te curtiu', included: true },
+      { text: '5 SUper Likes por dia', included: true },
+      { text: 'Filtro completo (religião, altura, idade...)', included: true },
     ],
     standard: [
+      { text: 'Ganhe destaque no feed', included: true },
       { text: 'Curtidas ilimitadas', included: true },
-      { text: 'Volte ao perfil anterior', included: true },
-      { text: '5 SuperSwipes por semana', included: true },
-      { text: 'Veja quem curtiu você', included: false },
-      { text: 'Modo viagem global', included: false },
+      { text: '3 SUper Likes por dia', included: true },
+      { text: 'Potencialize suas curtidas', included: false },
+      { text: 'Ver quem te curtiu', included: false },
     ],
     free: [
-      { text: 'Curtidas ilimitadas', included: false },
-      { text: 'Volte ao perfil anterior', included: false },
-      { text: 'SuperSwipes', included: false },
-      { text: 'Veja quem curtiu você', included: false },
-      { text: 'Perfil Básico', included: true },
+      { text: 'Curtidas limitadas por dia', included: true },
+      { text: '1 Super Like por dia', included: true },
+      { text: 'Ganhe destaque no feed', included: false },
+      { text: 'Potencialize suas curtidas', included: false },
+      { text: 'Perfil básico de tempo', included: false },
     ],
   };
 
