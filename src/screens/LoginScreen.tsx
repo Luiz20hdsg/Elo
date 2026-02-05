@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import StyledButton from '../components/StyledButton';
 import StyledInput from '../components/StyledInput';
@@ -15,6 +16,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 // Adicionando import para os ícones de marca
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { supabase } from '../lib/supabase';
 
 type RootStackParamList = {
   Initial: undefined;
@@ -33,6 +35,38 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
 const LoginScreen = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { colors, theme, toggleTheme } = useTheme();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Erro', 'Por favor, preencha email e senha.');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      Alert.alert('Erro no login', error.message);
+    } else {
+      // A navegação para 'Main' será tratada no App.tsx,
+      // que ouvirá as mudanças no estado de autenticação.
+    }
+    setLoading(false);
+  };
+
+  // TODO: Implementar login com Google e Facebook
+  const handleSocialLogin = (provider: 'google' | 'facebook') => {
+    console.log(`Login com ${provider} ainda não implementado.`);
+    // Exemplo de como seria com o Supabase:
+    // await supabase.auth.signInWithOAuth({ provider });
+  };
 
   // The styles are now a function of the colors from the theme
   const styles = StyleSheet.create({
@@ -165,9 +199,17 @@ const LoginScreen = () => {
           placeholder="Email"
           keyboardType="email-address"
           autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
         />
 
-        <StyledInput icon="🔒" placeholder="Senha" isPassword={true} />
+        <StyledInput 
+          icon="🔒" 
+          placeholder="Senha" 
+          isPassword={true} 
+          value={password}
+          onChangeText={setPassword}
+        />
 
         <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
           <Text style={styles.forgotPassword}>Esqueci minha senha</Text>
@@ -176,8 +218,9 @@ const LoginScreen = () => {
 
         <View style={styles.buttonContainer}>
           <StyledButton
-            title="Entrar"
-            onPress={() => navigation.navigate('Main')}
+            title={loading ? 'Entrando...' : 'Entrar'}
+            onPress={handleLogin}
+            disabled={loading}
           />
           <StyledButton
             title="Criar Conta"
@@ -198,7 +241,7 @@ const LoginScreen = () => {
             {/* Botão Google */}
             <TouchableOpacity 
               style={styles.socialBtn}
-              onPress={() => console.log('Login Google')}
+              onPress={() => handleSocialLogin('google')}
             >
               <Icon name="google" size={22} color="#DB4437" />
               <Text style={styles.socialBtnText}>Google</Text>
@@ -207,7 +250,7 @@ const LoginScreen = () => {
             {/* Botão Facebook */}
             <TouchableOpacity 
               style={styles.socialBtn}
-              onPress={() => console.log('Login Facebook')}
+              onPress={() => handleSocialLogin('facebook')}
             >
               <Icon name="facebook" size={26} color="#4267B2" />
               <Text style={styles.socialBtnText}>Facebook</Text>
@@ -219,6 +262,7 @@ const LoginScreen = () => {
     </SafeAreaView>
   );
 };
+
 
 
 export default LoginScreen;

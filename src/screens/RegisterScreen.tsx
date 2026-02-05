@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import StyledButton from '../components/StyledButton';
 import StyledInput from '../components/StyledInput';
@@ -13,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { supabase } from '../lib/supabase';
 
 type RootStackParamList = {
   Initial: undefined;
@@ -29,8 +31,61 @@ type RegisterScreenNavigationProp = NativeStackNavigationProp<
 const RegisterScreen = () => {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
   const { colors, theme, toggleTheme } = useTheme();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  // O ideal é tratar a data com um DatePicker, mas para simplificar usamos texto.
+  const [birthDate, setBirthDate] = useState(''); 
+  const [loading, setLoading] = useState(false);
 
-  // The styles are now a function of the colors from the theme
+  const handleSignUp = async () => {
+    if (!email || !password || !username || !birthDate) {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      return;
+    }
+
+    setLoading(true);
+    
+    const { data: { user }, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      Alert.alert('Erro no cadastro', error.message);
+      setLoading(false);
+      return;
+    }
+
+    if (user) {
+      // O trigger já criou um profile básico. Agora atualizamos com os dados adicionais.
+      // Note que o username na tabela 'profiles' é o que será usado no app, não o email.
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          username: username,
+          // full_name pode ser preenchido depois, no perfil.
+          // a data de nascimento também precisaria de uma coluna 'birth_date' na tabela.
+        })
+        .eq('id', user.id);
+
+      if (profileError) {
+        Alert.alert('Erro ao criar perfil', profileError.message);
+        // Aqui, você pode querer deletar o usuário recém-criado para evitar inconsistência.
+        // await supabase.auth.api.deleteUser(user.id);
+      } else {
+        Alert.alert(
+          'Cadastro realizado!',
+          'Um email de confirmação foi enviado. Por favor, verifique sua caixa de entrada.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      }
+    }
+    
+    setLoading(false);
+  };
+
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -105,6 +160,8 @@ const RegisterScreen = () => {
           icon="👤"
           placeholder="Nome de usuário"
           autoCapitalize="none"
+          value={username}
+          onChangeText={setUsername}
         />
 
         <StyledInput
@@ -112,27 +169,36 @@ const RegisterScreen = () => {
           placeholder="Email"
           keyboardType="email-address"
           autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
         />
 
         <StyledInput
           icon="🎂"
-          placeholder="Data de nascimento"
+          placeholder="Data de nascimento (DD/MM/AAAA)"
           autoCapitalize="none"
+          value={birthDate}
+          onChangeText={setBirthDate}
         />
 
-        <StyledInput icon="🔒" placeholder="Senha" isPassword={true} />
+        <StyledInput 
+          icon="🔒" 
+          placeholder="Senha" 
+          isPassword={true} 
+          value={password}
+          onChangeText={setPassword}
+        />
 
         <View style={styles.buttonContainer}>
           <StyledButton
-            title="Cadastrar"
-            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Home' }] })}
+            title={loading ? 'Cadastrando...' : 'Cadastrar'}
+            onPress={handleSignUp}
+            disabled={loading}
           />
         </View>
       </View>
     </SafeAreaView>
   );
 };
-
-
 
 export default RegisterScreen;
