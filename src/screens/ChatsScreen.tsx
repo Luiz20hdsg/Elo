@@ -9,12 +9,14 @@ import {
   ScrollView,
   Image,
   Dimensions,
-  Modal
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { supabase } from '../lib/supabase';
 
 const { width } = Dimensions.get('window');
 
@@ -32,14 +34,14 @@ type ChatsScreenNavigationProp = NativeStackNavigationProp<
   'Main'
 >;
 
-// --- MOCKS ---
-const MATCHES_DATA = [
-  { id: '1', name: 'Ana', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' },
-  { id: '2', name: 'Bia', photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400' },
-  { id: '3', name: 'Carla', photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400' },
-  { id: '4', name: 'Dani', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400' },
-  { id: '5', name: 'Elisa', photo: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400' },
-];
+
+
+type Match = {
+  match_id: number;
+  other_user_id: string;
+  other_user_full_name: string;
+  other_user_avatar_url: string;
+};
 
 const CHATS_DATA = [
   { 
@@ -72,10 +74,36 @@ const ChatsScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<ChatsScreenNavigationProp>();
 
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const handleLogout = () => {
-    navigation.navigate('Initial');
+  // useFocusEffect will re-run the fetch when the screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchMatches();
+    }, [])
+  );
+
+  const fetchMatches = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data, error } = await supabase.rpc('get_matches', {
+        p_user_id: user.id,
+      });
+
+      if (error) {
+        console.error('Error fetching matches:', error);
+      } else {
+        setMatches(data || []);
+      }
+    }
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   // --- MUDANÇA AQUI: useEffect roda apenas UMA vez na montagem ---
@@ -155,6 +183,11 @@ const ChatsScreen = () => {
         color: colors.text,
         fontSize: 12,
         fontWeight: '600',
+    },
+    loadingContainer: {
+      height: 100,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
 
     // Chat List
@@ -299,31 +332,34 @@ const ChatsScreen = () => {
         {/* MATCHES */}
         <View style={styles.matchesSection}>
             <Text style={styles.sectionTitle}>Seus Matches</Text>
-            <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.matchesScroll}
-            >
-                <TouchableOpacity style={styles.matchItem}>
-                    <View style={[styles.matchImageContainer, { borderColor: '#FFD700', backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }]}>
-                        <Ionicons name="heart" size={24} color="#FFD700" />
-                    </View>
-                    <Text style={[styles.matchName, {color: '#FFD700'}]}>Likes</Text>
-                </TouchableOpacity>
-
-                {MATCHES_DATA.map((match) => (
-                    <TouchableOpacity 
-                        key={match.id} 
-                        style={styles.matchItem}
-                        onPress={() => handleChatPress(match)}
-                    >
-                        <View style={styles.matchImageContainer}>
-                            <Image source={{ uri: match.photo }} style={styles.matchImage} />
-                        </View>
-                        <Text style={styles.matchName}>{match.name}</Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : (
+              <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.matchesScroll}
+              >
+                  {matches.map((match) => (
+                      <TouchableOpacity 
+                          key={match.match_id} 
+                          style={styles.matchItem}
+                          onPress={() => handleChatPress({
+                            id: match.other_user_id,
+                            name: match.other_user_full_name,
+                            photo: match.other_user_avatar_url
+                          })}
+                      >
+                          <View style={styles.matchImageContainer}>
+                              <Image source={{ uri: match.other_user_avatar_url }} style={styles.matchImage} />
+                          </View>
+                          <Text style={styles.matchName}>{match.other_user_full_name}</Text>
+                      </TouchableOpacity>
+                  ))}
+              </ScrollView>
+            )}
         </View>
 
         {/* CHATS LIST */}

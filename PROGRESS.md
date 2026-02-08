@@ -46,41 +46,26 @@ Este documento descreve o plano e o progresso da implementação do backend para
 - [x] Criar um trigger no DB para criar um `profile` quando um novo `auth.user` for criado.
 
 ### Fase 2: Gerenciamento de Perfis
-- [ ] **Implementar busca de dados do perfil do usuário logado.**
-  - Tentativa de implementação na `ProfileScreen.tsx` falhou devido a problemas com a ferramenta `replace`.
-  - Plano para a próxima tentativa:
-    1. Adicionar estado para `profile` e `loading`.
-    2. Importar `supabase`.
-    3. Usar `useFocusEffect` para buscar dados na ativação da tela.
-    4. Implementar `fetchProfile` para:
-        * Ativar `loading`.
-        * Obter usuário atual via `supabase.auth.getUser()`.
-        * Buscar perfil do usuário na tabela `profiles`.
-        * Atualizar o estado `profile`.
-        * Tratar erros com alertas.
-        * Desativar `loading`.
-    5. Atualizar a UI com os dados do `profile` e adicionar um indicador de `loading`.
-    6. Alterar `handleLogout` para chamar `supabase.auth.signOut()`.
-    7. Fazer o botão "Completar perfil" navegar para `EditProfileScreen`.
-- [ ] Implementar a edição de informações do perfil (nome, bio, interesses).
-- [ ] Implementar o upload de fotos para o Supabase Storage e associá-las ao perfil.
-- [ ] Implementar a coleta e atualização da localização do usuário.
-- [ ] Configurar Políticas de Segurança (RLS) para a tabela `profiles`.
+- [x] **Implementar busca de dados do perfil do usuário logado.**
+- [x] Implementar a edição de informações do perfil (nome, bio, interesses).
+- [x] Implementar o upload de fotos para o Supabase Storage e associá-las ao perfil.
+- [x] Implementar a coleta e atualização da localização do usuário.
+- [x] Configurar Políticas de Segurança (RLS) para a tabela `profiles`.
 
 ### Fase 3: Descoberta de Pessoas e Interações (Matchmaking)
-- [ ] **Algoritmo de Recomendação (Função RPC):**
-  - [ ] Criar uma função no banco de dados `get_recommendations()` que retorna uma lista de usuários.
-  - [ ] O "score" de recomendação será baseado em:
+- [x] **Algoritmo de Recomendação (Função RPC):**
+  - [x] Criar uma função no banco de dados `get_recommendations()` que retorna uma lista de usuários.
+  - [x] O "score" de recomendação será baseado em:
     - **Proximidade:** Calcular a distância usando PostGIS (maior score para menor distância).
     - **Interesses em Comum:** Comparar arrays de `interests` (maior score para mais interesses em comum).
-  - [ ] A função deve filtrar usuários já interagidos ou que são matches.
-- [ ] Implementar a funcionalidade de **"like" / "dislike"** na UI, que chamará a função de interação.
-- [ ] Criar uma função no DB que, ao receber um "like", verifica se é mútuo e, em caso afirmativo, cria um registro na tabela `matches`.
-- [ ] Configurar RLS para `interactions` e `matches`.
+  - [x] A função deve filtrar usuários já interagidos ou que são matches.
+- [x] Implementar a funcionalidade de **"like" / "dislike"** na UI, que chamará a função de interação.
+- [x] Criar uma função no DB que, ao receber um "like", verifica se é mútuo e, em caso afirmativo, cria um registro na tabela `matches`.
+- [x] Configurar RLS para `interactions` e `matches`.
 
 ### Fase 4: Chat em Tempo Real
-- [ ] Implementar a busca da lista de `matches` (conversas) do usuário.
-- [ ] Ativar o serviço de **Realtime** do Supabase para a tabela `messages`.
-- [ ] Implementar a tela de chat para buscar o histórico e receber novas mensagens em tempo real.
-- [ ] Implementar a função de envio de mensagens.
-- [ ] Configurar RLS para `messages` para garantir a privacidade das conversas.
+- [x] Implementar a busca da lista de `matches` (conversas) do usuário.
+- [x] Ativar o serviço de **Realtime** do Supabase para a tabela `messages`.
+- [x] Implementar a tela de chat para buscar o histórico e receber novas mensagens em tempo real.
+- [x] Implementar a função de envio de mensagens.
+- [x] Configurar RLS para `messages` para garantir a privacidade das conversas.

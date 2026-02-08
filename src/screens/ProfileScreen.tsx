@@ -9,12 +9,14 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { supabase } from '../../lib/supabase';
 
 type RootStackParamList = {
   Initial: undefined;
@@ -30,9 +32,53 @@ const ProfileScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
 
-  const handleLogout = () => {
-    navigation.navigate('Initial');
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      Alert.alert('Erro', 'Não foi possível fazer o logout.');
+    }
+    // O listener em App.tsx cuidará da navegação
   };
+
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<{
+    username: string;
+    full_name: string;
+    avatar_url: string;
+    bio: string;
+  } | null>(null);
+
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data, error, status } = await supabase
+          .from('profiles')
+          .select(`username, full_name, avatar_url, bio`)
+          .eq('id', user.id)
+          .single();
+
+        if (error && status !== 406) {
+          throw error;
+        }
+
+        if (data) {
+          setProfile(data);
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert('Erro', 'Não foi possível carregar o perfil.');
+        console.error(error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const [activeChip, setActiveChip] = useState<'advice' | 'photos'>('advice');
   const [selectedTab, setSelectedTab] = useState<'plus' | 'standard' | 'free'>('plus');
@@ -43,7 +89,8 @@ const ProfileScreen = () => {
   useFocusEffect(
     useCallback(() => {
       setActiveChip('advice');
-    }, []),
+      fetchProfile();
+    }, [fetchProfile]),
   );
 
   const BANNER_SLIDES = [
@@ -358,6 +405,14 @@ const ProfileScreen = () => {
     return selectedTab === tabName ? colors.text : '#666';
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar
@@ -382,12 +437,12 @@ const ProfileScreen = () => {
           <View style={styles.avatarContainer}>
             <Image
               source={{
-                uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+                uri: profile?.avatar_url || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
               }}
               style={styles.avatar}
             />
 
-            <TouchableOpacity style={styles.editIconWrapper}>
+            <TouchableOpacity style={styles.editIconWrapper} onPress={() => navigation.navigate('EditProfileScreen' as any)}>
               <Ionicons name="pencil" size={14} color="#D3D3D3" />
             </TouchableOpacity>
 
@@ -396,8 +451,8 @@ const ProfileScreen = () => {
             </View>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>João, 22</Text>
-            <TouchableOpacity style={styles.editButton}>
+            <Text style={styles.userName}>{profile?.full_name || 'Usuário'}</Text>
+            <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditProfileScreen' as any)}>
               <Text style={styles.editButtonText}>Completar perfil</Text>
             </TouchableOpacity>
           </View>

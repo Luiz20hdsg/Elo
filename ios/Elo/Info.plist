@@ -35,7 +35,7 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Precisamos da sua localização para encontrar pessoas perto de você.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to let you choose a photo.</string>
 	<key>UILaunchStoryboardName</key>

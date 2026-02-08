@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,66 +11,150 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Dimensions
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { supabase } from '../lib/supabase';
+import { User } from '@supabase/supabase-js';
 
-// --- Tipagem dos Parâmetros Recebidos ---
+// --- Types ---
 type RootStackParamList = {
   ChatDetail: { userId: string; userName: string; userPhoto: string };
 };
 
 type ChatDetailRouteProp = RouteProp<RootStackParamList, 'ChatDetail'>;
 
-// --- DADOS FAKE INICIAIS ---
-const INITIAL_MESSAGES = [
-  { id: '1', text: 'Oii! Tudo bem?', sender: 'them', time: '10:30' },
-  { id: '2', text: 'Oie, tudo ótimo e com você?', sender: 'me', time: '10:31' },
-  { id: '3', text: 'Tudo certo também! Adorei suas fotos de viagem.', sender: 'them', time: '10:32' },
-];
+type Message = {
+  id: number;
+  match_id: number;
+  sender_id: string;
+  content: string;
+  created_at: string;
+};
 
 const ChatDetailScreen = () => {
   const { colors, theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<ChatDetailRouteProp>();
   
-  // Pegando dados passados pela tela anterior
-  const { userName, userPhoto } = route.params;
+  const { userId: otherUserId, userName, userPhoto } = route.params;
 
-  const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [matchId, setMatchId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const flatListRef = useRef<FlatList>(null);
 
-  // Função para Enviar Mensagem
-  const handleSend = () => {
-    if (inputText.trim().length === 0) return;
+  useEffect(() => {
+    const initializeChat = async () => {
+      setLoading(true);
 
-    const newMessage = {
-      id: Date.now().toString(),
-      text: inputText,
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      // 1. Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      setCurrentUser(user);
+
+      // 2. Find the match ID
+      const { data: matchData, error: matchError } = await supabase
+        .from('matches')
+        .select('id')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${otherUserId}),and(user1_id.eq.${otherUserId},user2_id.eq.${user.id})`)
+        .single();
+
+      if (matchError || !matchData) {
+        console.error('Error finding match:', matchError);
+        setLoading(false);
+        return;
+      }
+      
+      const currentMatchId = matchData.id;
+      setMatchId(currentMatchId);
+
+      // 3. Fetch initial messages
+      const { data: initialMessages, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('match_id', currentMatchId)
+        .order('created_at', { ascending: true });
+
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+      } else {
+        setMessages(initialMessages || []);
+      }
+      
+      setLoading(false);
     };
 
-    setMessages((prev) => [...prev, newMessage]);
+    initializeChat();
+  }, [otherUserId]);
+
+  // 4. Set up Realtime subscription
+  useEffect(() => {
+    if (!matchId) return;
+
+    const channel = supabase
+      .channel(`messages_match_${matchId}`)
+      .on<Message>(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `match_id=eq.${matchId}`
+        },
+        (payload) => {
+          setMessages((prevMessages) => [...prevMessages, payload.new]);
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [matchId]);
+
+
+  const handleSend = async () => {
+    if (inputText.trim().length === 0 || !currentUser || !matchId) return;
+
+    const messageContent = inputText.trim();
     setInputText('');
+
+    const { error } = await supabase.from('messages').insert({
+      match_id: matchId,
+      sender_id: currentUser.id,
+      content: messageContent,
+    });
+
+    if (error) {
+      console.error('Error sending message:', error);
+      // Re-set the input text if sending failed
+      setInputText(messageContent);
+    }
   };
 
-  // Rolar para o fim quando chegar mensagem nova
   useEffect(() => {
-    setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  }, [messages]);
+    if (!loading) {
+        setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+    }
+  }, [messages, loading]);
 
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
-    // --- Header ---
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -101,14 +185,12 @@ const ChatDetailScreen = () => {
     },
     status: {
       fontSize: 12,
-      color: colors.primary, // "Online" em verde
+      color: colors.primary,
     },
     headerActions: {
         flexDirection: 'row',
         gap: 15
     },
-
-    // --- Lista de Mensagens ---
     messagesContainer: {
         flex: 1,
         paddingHorizontal: 15,
@@ -119,13 +201,11 @@ const ChatDetailScreen = () => {
         borderRadius: 20,
         marginBottom: 10,
     },
-    // Balão MEU (Direita)
     myBubble: {
         alignSelf: 'flex-end',
         backgroundColor: colors.primary,
-        borderBottomRightRadius: 4, // Efeito visual de chat
+        borderBottomRightRadius: 4,
     },
-    // Balão DELE(A) (Esquerda)
     theirBubble: {
         alignSelf: 'flex-start',
         backgroundColor: theme === 'dark' ? '#2A2A2A' : '#E5E5EA',
@@ -133,10 +213,10 @@ const ChatDetailScreen = () => {
     },
     messageText: {
         fontSize: 15,
-        color: '#FFF', // Texto branco no meu balão fica melhor
+        color: '#FFF',
     },
     theirMessageText: {
-        color: colors.text, // Cor normal no balão cinza
+        color: colors.text,
     },
     timeText: {
         fontSize: 10,
@@ -145,8 +225,6 @@ const ChatDetailScreen = () => {
         opacity: 0.7,
         color: 'inherit'
     },
-
-    // --- Barra de Input ---
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -172,11 +250,17 @@ const ChatDetailScreen = () => {
         borderRadius: 22.5,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     }
   });
 
-  const renderMessage = ({ item }: { item: any }) => {
-      const isMe = item.sender === 'me';
+  const renderMessage = ({ item }: { item: Message }) => {
+      const isMe = item.sender_id === currentUser?.id;
+      const time = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       return (
           <View style={[
               styles.messageBubble, 
@@ -186,23 +270,43 @@ const ChatDetailScreen = () => {
                   styles.messageText, 
                   !isMe && styles.theirMessageText
               ]}>
-                  {item.text}
+                  {item.content}
               </Text>
               <Text style={[
                   styles.timeText, 
-                  { color: isMe ? 'rgba(255,255,255,0.7)' : colors.placeholder }
+                  { color: isMe ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)' }
               ]}>
-                  {item.time}
+                  {time}
               </Text>
           </View>
       );
   };
 
+  if (loading) {
+    return (
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="chevron-back" size={28} color={colors.text} />
+                </TouchableOpacity>
+                <View style={styles.headerInfo}>
+                    <Image source={{ uri: userPhoto }} style={styles.avatar} />
+                    <View style={styles.headerTextContainer}>
+                        <Text style={styles.name}>{userName}</Text>
+                    </View>
+                </View>
+            </View>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={28} color={colors.text} />
@@ -226,22 +330,20 @@ const ChatDetailScreen = () => {
         </View>
       </View>
 
-      {/* ÁREA DE MENSAGENS */}
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <FlatList
             ref={flatListRef}
             data={messages}
             renderItem={renderMessage}
-            keyExtractor={item => item.id}
+            keyExtractor={(item, index) => item.id?.toString() || index.toString()}
             contentContainerStyle={{ paddingVertical: 20 }}
             style={styles.messagesContainer}
         />
 
-        {/* BARRA DE INPUT */}
         <View style={styles.inputContainer}>
             <TouchableOpacity style={{ marginRight: 10 }}>
                 <Ionicons name="add-circle-outline" size={28} color={colors.placeholder} />
