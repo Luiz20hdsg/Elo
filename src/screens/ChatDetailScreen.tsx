@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -152,7 +152,7 @@ const ChatDetailScreen = () => {
     }
   }, [messages, loading]);
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
@@ -269,7 +269,7 @@ const ChatDetailScreen = () => {
         justifyContent: 'center',
         alignItems: 'center',
     }
-  });
+  }), [colors, theme]);
 
   const renderMessage = ({ item }: { item: Message }) => {
       const isMe = item.sender_id === currentUser?.id;

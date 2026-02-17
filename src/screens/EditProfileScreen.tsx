@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -169,7 +169,7 @@ const EditProfileScreen = () => {
     { id: 6, uri: null },
   ]);
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
@@ -281,7 +281,7 @@ const EditProfileScreen = () => {
     viewSpacing: {
       height: 40,
     },
-  });
+  }), [colors, theme]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

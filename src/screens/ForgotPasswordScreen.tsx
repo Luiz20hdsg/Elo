@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -54,7 +54,7 @@ const ForgotPasswordScreen = () => {
     setLoading(false);
   };
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
@@ -97,7 +97,7 @@ const ForgotPasswordScreen = () => {
       fontSize: 15,
       marginBottom: 20,
     },
-  });
+  }), [colors, theme]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -99,7 +99,7 @@ const LoginScreen = () => {
     }
   };
 
-  const styles = StyleSheet.create({
+  const styles = useMemo(() => StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: colors.background },
     header: { position: 'absolute', top: 60, left: 20, right: 20, zIndex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     container: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 },
@@ -121,7 +121,7 @@ const LoginScreen = () => {
       shadowColor: colors.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
     },
     socialBtnText: { marginLeft: 10, fontSize: 15, fontWeight: '600', color: colors.text },
-  });
+  }), [colors, theme]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
