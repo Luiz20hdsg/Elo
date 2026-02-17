@@ -6,12 +6,14 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import StyledButton from '../components/StyledButton';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { supabase } from '../lib/supabase';
 
 type RootStackParamList = {
   Login: undefined;
@@ -51,31 +53,32 @@ const ChangePasswordScreen = () => {
     container: {
       flex: 1,
       justifyContent: 'center',
-      paddingHorizontal: 24,
+      paddingHorizontal: 28,
     },
     title: {
-      fontSize: 24,
-      fontWeight: 'bold',
+      fontSize: 26,
+      fontWeight: '800',
       color: colors.text,
-      marginBottom: 20,
+      marginBottom: 24,
     },
     inputContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: colors.inputBackground,
-      borderWidth: 1,
-      borderRadius: 12,
-      marginBottom: 20,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+      borderRadius: 14,
+      marginBottom: 16,
     },
     input: {
       flex: 1,
       color: colors.text,
-      paddingHorizontal: 15,
-      paddingVertical: 12,
-      fontSize: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 15,
     },
     eyeIcon: {
-      padding: 10,
+      padding: 12,
     }
   });
 
@@ -138,7 +141,28 @@ const ChangePasswordScreen = () => {
             <Ionicons name={isConfirmNewPasswordVisible ? 'eye-off' : 'eye'} size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
-        <StyledButton title="Salvar Alterações" onPress={() => { /* handle password change */ }} />
+        <StyledButton title="Salvar Alterações" onPress={async () => {
+          if (!newPassword || !confirmNewPassword) {
+            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+            return;
+          }
+          if (newPassword !== confirmNewPassword) {
+            Alert.alert('Erro', 'As senhas não coincidem.');
+            return;
+          }
+          if (newPassword.length < 6) {
+            Alert.alert('Erro', 'A nova senha deve ter pelo menos 6 caracteres.');
+            return;
+          }
+          const { error } = await supabase.auth.updateUser({ password: newPassword });
+          if (error) {
+            Alert.alert('Erro', error.message);
+          } else {
+            Alert.alert('Sucesso', 'Senha alterada com sucesso!', [
+              { text: 'OK', onPress: () => navigation.goBack() }
+            ]);
+          }
+        }} />
       </View>
     </SafeAreaView>
   );

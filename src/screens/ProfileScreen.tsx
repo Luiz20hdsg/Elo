@@ -10,17 +10,19 @@ import {
   Image,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 type RootStackParamList = {
   Initial: undefined;
   PhotoTips: undefined;
+  EditProfileScreen: undefined;
 };
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -46,6 +48,7 @@ const ProfileScreen = () => {
     full_name: string;
     avatar_url: string;
     bio: string;
+    age: number | null;
   } | null>(null);
 
   const fetchProfile = useCallback(async () => {
@@ -57,8 +60,8 @@ const ProfileScreen = () => {
 
       if (user) {
         const { data, error, status } = await supabase
-          .from('profiles')
-          .select(`username, full_name, avatar_url, bio`)
+          .from('profiles_with_age')
+          .select(`username, full_name, avatar_url, bio, age`)
           .eq('id', user.id)
           .single();
 
@@ -178,7 +181,7 @@ const ProfileScreen = () => {
     profileSection: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 20,
+      paddingHorizontal: 24,
       marginTop: 20,
     },
     avatarContainer: {
@@ -196,126 +199,144 @@ const ProfileScreen = () => {
       position: 'absolute',
       top: 0,
       right: 0,
-      backgroundColor: 'rgba(30, 30, 30, 0.6)',
-      borderRadius: 15,
+      backgroundColor: colors.primary,
+      borderRadius: 14,
       padding: 6,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.1)',
+      borderWidth: 2,
+      borderColor: colors.background,
       zIndex: 10,
     },
     percentageBadge: {
       position: 'absolute',
       bottom: -5,
       alignSelf: 'center',
-      backgroundColor: '#333',
-      paddingHorizontal: 8,
-      paddingVertical: 2,
+      backgroundColor: colors.cardElevated,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
       borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.text,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
       zIndex: 10,
     },
     percentageText: {
-      color: '#FFF',
-      fontSize: 12,
-      fontWeight: 'bold',
+      color: colors.primary,
+      fontSize: 11,
+      fontWeight: '800',
     },
     profileInfo: {
       flex: 1,
     },
     userName: {
-      fontSize: 24,
-      fontWeight: 'bold',
+      fontSize: 22,
+      fontWeight: '800',
       color: colors.text,
-      marginBottom: 5,
+      marginBottom: 6,
     },
     editButton: {
       paddingVertical: 8,
-      paddingHorizontal: 15,
+      paddingHorizontal: 18,
       borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colors.text,
+      borderWidth: 1.5,
+      borderColor: colors.border,
       alignSelf: 'flex-start',
+      backgroundColor: colors.card,
     },
     editButtonText: {
       color: colors.text,
       fontWeight: '600',
-      fontSize: 14,
+      fontSize: 13,
     },
     chipsScroll: {
-      marginTop: 25,
-      paddingLeft: 20,
+      marginTop: 28,
+      paddingLeft: 24,
     },
     chipItem: {
-      marginRight: 20,
+      marginRight: 24,
     },
     chipText: {
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: '600',
-      color: '#888',
+      color: colors.secondaryText,
     },
     chipTextActive: {
       color: colors.text,
     },
     dot: {
-      color: 'red',
+      color: colors.primary,
       fontSize: 20,
       lineHeight: 18,
     },
     actionGrid: {
       flexDirection: 'row',
-      paddingHorizontal: 20,
+      paddingHorizontal: 24,
       justifyContent: 'space-between',
-      marginTop: 25,
+      marginTop: 24,
     },
     actionCard: {
-      width: (width - 50) / 2,
-      backgroundColor: theme === 'dark' ? '#1E1E1E' : '#F5F5F5',
-      borderRadius: 12,
-      padding: 15,
+      width: (width - 58) / 2,
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      height: 100,
+      height: 110,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: theme === 'dark' ? 0.2 : 0.06,
+      shadowRadius: 8,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: colors.separator,
     },
     iconCircle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: '#333',
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primary,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 8,
+      marginBottom: 10,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 4,
     },
     actionTitle: {
       color: colors.text,
-      fontWeight: 'bold',
-      fontSize: 16,
+      fontWeight: '700',
+      fontSize: 15,
     },
     actionSubtitle: {
-      color: '#888',
+      color: colors.secondaryText,
       fontSize: 12,
       marginTop: 2,
     },
     bannerContainer: {
-        marginHorizontal: 20,
-        marginTop: 25,
+        marginHorizontal: 24,
+        marginTop: 24,
         height: 180,
-        borderRadius: 16,
+        borderRadius: 20,
         overflow: 'hidden',
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 6,
     },
     bannerSlide: {
         width: BANNER_WIDTH,
         backgroundColor: colors.primary,
-        padding: 20,
+        padding: 22,
         justifyContent: 'center',
         height: '100%',
     },
     premiumBadge: {
       backgroundColor: 'rgba(0,0,0,0.2)',
       alignSelf: 'flex-start',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 6,
       marginBottom: 10,
     },
     premiumBadgeText: {
@@ -323,12 +344,13 @@ const ProfileScreen = () => {
       fontWeight: '900',
       fontStyle: 'italic',
       fontSize: 12,
+      letterSpacing: 0.5,
     },
     premiumText: {
       color: '#FFF',
-      fontSize: 15,
+      fontSize: 14,
       lineHeight: 22,
-      marginBottom: 15,
+      marginBottom: 16,
       fontWeight: '500',
     },
     premiumButton: {
@@ -336,14 +358,20 @@ const ProfileScreen = () => {
       paddingVertical: 12,
       borderRadius: 25,
       alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     premiumButtonText: {
       color: colors.primary,
-      fontWeight: 'bold',
+      fontWeight: '700',
+      fontSize: 14,
     },
     pagination: {
         position: 'absolute',
-        bottom: 10,
+        bottom: 12,
         left: 0,
         right: 0,
         flexDirection: 'row',
@@ -354,48 +382,50 @@ const ProfileScreen = () => {
         width: 6,
         height: 6,
         borderRadius: 3,
-        backgroundColor: 'rgba(255,255,255,0.4)',
+        backgroundColor: 'rgba(255,255,255,0.35)',
     },
     paginationDotActive: {
         backgroundColor: '#FFF',
-        width: 18,
+        width: 20,
     },
     advantagesSection: {
-      paddingHorizontal: 20,
-      marginTop: 25,
+      paddingHorizontal: 24,
+      marginTop: 28,
       marginBottom: 40,
     },
     sectionHeaderRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginBottom: 15,
+      marginBottom: 16,
       alignItems: 'center',
     },
     sectionTitle: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: 'bold',
+      fontWeight: '800',
     },
     toggleRow: {
       flexDirection: 'row',
     },
     toggleButton: {
-      marginLeft: 15,
+      marginLeft: 14,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
     },
     toggleText: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '600',
     },
     advantageRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 15,
+      paddingVertical: 14,
       borderBottomWidth: 1,
-      borderBottomColor: 'rgba(255,255,255,0.1)',
+      borderBottomColor: colors.separator,
     },
     advantageText: {
-      fontSize: 16,
+      fontSize: 14,
       flex: 1,
       fontWeight: '500',
     },
@@ -419,17 +449,17 @@ const ProfileScreen = () => {
         barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
         backgroundColor={colors.background}
       />
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end' , marginTop:25}}>
-        <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
-          <Ionicons
-            name={theme === 'dark' ? 'sunny' : 'moon'}
-            size={24}
-            color={colors.text}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleLogout} style={{ padding: 10 }}>
-          <Icon name="logout" size={24} color={colors.text} />
-        </TouchableOpacity>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingHorizontal: 24 }}>
+        <Text style={{ fontSize: 26, fontWeight: '800', color: colors.text }}>Meu Perfil</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
+            <Ionicons
+              name={theme === 'dark' ? 'sunny' : 'moon'}
+              size={22}
+              color={colors.secondaryText}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -443,7 +473,7 @@ const ProfileScreen = () => {
             />
 
             <TouchableOpacity style={styles.editIconWrapper} onPress={() => navigation.navigate('EditProfileScreen' as any)}>
-              <Ionicons name="pencil" size={14} color="#D3D3D3" />
+              <Ionicons name="pencil" size={12} color="#FFF" />
             </TouchableOpacity>
 
             <View style={styles.percentageBadge}>
@@ -451,7 +481,10 @@ const ProfileScreen = () => {
             </View>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{profile?.full_name || 'Usuário'}</Text>
+            <Text style={styles.userName}>
+              {profile?.full_name || 'Usuário'}
+              {profile?.age && `, ${profile.age}`}
+            </Text>
             <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditProfileScreen' as any)}>
               <Text style={styles.editButtonText}>Completar perfil</Text>
             </TouchableOpacity>

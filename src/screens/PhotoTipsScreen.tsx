@@ -73,11 +73,11 @@ const PhotoTipsScreen = () => {
       alignItems: 'center',
       padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: 'rgba(255,255,255,0.05)',
+      borderBottomColor: colors.separator,
     },
     headerTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
+      fontSize: 18,
+      fontWeight: '700',
       color: colors.text,
       marginLeft: 15,
     },
@@ -85,46 +85,51 @@ const PhotoTipsScreen = () => {
       padding: PADDING,
     },
     subtitle: {
-      color: '#888',
-      fontSize: 16,
-      marginBottom: 20,
+      color: colors.secondaryText,
+      fontSize: 14,
+      marginBottom: 24,
       lineHeight: 22,
     },
     gridContainer: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'space-between',
-      paddingBottom: 40,
+      paddingBottom: 30,
     },
     card: {
       width: CARD_WIDTH,
-      marginBottom: 20,
-      backgroundColor: theme === 'dark' ? '#1E1E1E' : '#F5F5F5',
-      borderRadius: 16,
-      padding: 15,
+      marginBottom: 16,
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      padding: 18,
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.05)',
+      borderColor: colors.separator,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: theme === 'dark' ? 0.15 : 0.05,
+      shadowRadius: 6,
+      elevation: 2,
     },
     iconContainer: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: 'rgba(76, 175, 80, 0.1)', // Fundo verde bem suave
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: theme === 'dark' ? 'rgba(29, 185, 84, 0.15)' : 'rgba(29, 185, 84, 0.1)',
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 12,
     },
     cardTitle: {
       color: colors.text,
-      fontWeight: 'bold',
-      fontSize: 16,
+      fontWeight: '700',
+      fontSize: 15,
       textAlign: 'center',
-      marginBottom: 8,
+      marginBottom: 6,
     },
     cardDesc: {
-      color: '#888',
-      fontSize: 13,
+      color: colors.secondaryText,
+      fontSize: 12,
       textAlign: 'center',
       lineHeight: 18,
     },
@@ -166,14 +171,19 @@ const PhotoTipsScreen = () => {
         <TouchableOpacity 
           style={{
             backgroundColor: colors.primary,
-            padding: 15,
-            borderRadius: 12,
+            padding: 16,
+            borderRadius: 28,
             alignItems: 'center',
-            marginTop: 10
+            marginTop: 4,
+            shadowColor: colors.primary,
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.3,
+            shadowRadius: 6,
+            elevation: 4,
           }}
           onPress={() => navigation.goBack()}
         >
-          <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Entendi</Text>
+          <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15, letterSpacing: 0.5 }}>Entendi</Text>
         </TouchableOpacity>
 
       </ScrollView>

@@ -158,17 +158,20 @@ const ChatDetailScreen = () => {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 15,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.inputBackground,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
       backgroundColor: colors.background,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 2,
     },
     headerInfo: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      marginLeft: 10,
+      marginLeft: 8,
     },
     avatar: {
       width: 40,
@@ -176,44 +179,46 @@ const ChatDetailScreen = () => {
       borderRadius: 20,
     },
     headerTextContainer: {
-        marginLeft: 10,
+        marginLeft: 12,
     },
     name: {
       fontSize: 16,
-      fontWeight: 'bold',
+      fontWeight: '700',
       color: colors.text,
     },
     status: {
       fontSize: 12,
-      color: colors.primary,
+      color: colors.online,
+      fontWeight: '500',
     },
     headerActions: {
         flexDirection: 'row',
-        gap: 15
+        gap: 16,
     },
     messagesContainer: {
         flex: 1,
-        paddingHorizontal: 15,
+        paddingHorizontal: 16,
     },
     messageBubble: {
-        maxWidth: '75%',
-        padding: 12,
+        maxWidth: '78%',
+        padding: 14,
         borderRadius: 20,
-        marginBottom: 10,
+        marginBottom: 8,
     },
     myBubble: {
         alignSelf: 'flex-end',
-        backgroundColor: colors.primary,
-        borderBottomRightRadius: 4,
+        backgroundColor: colors.messageBubbleMine,
+        borderBottomRightRadius: 6,
     },
     theirBubble: {
         alignSelf: 'flex-start',
-        backgroundColor: theme === 'dark' ? '#2A2A2A' : '#E5E5EA',
-        borderBottomLeftRadius: 4,
+        backgroundColor: colors.messageBubbleTheirs,
+        borderBottomLeftRadius: 6,
     },
     messageText: {
         fontSize: 15,
         color: '#FFF',
+        lineHeight: 21,
     },
     theirMessageText: {
         color: colors.text,
@@ -223,33 +228,39 @@ const ChatDetailScreen = () => {
         marginTop: 4,
         alignSelf: 'flex-end',
         opacity: 0.7,
-        color: 'inherit'
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        borderTopWidth: 1,
-        borderTopColor: colors.inputBackground,
+        padding: 12,
+        paddingBottom: 16,
         backgroundColor: colors.background,
     },
     inputField: {
         flex: 1,
-        backgroundColor: theme === 'dark' ? '#1E1E1E' : '#F0F0F0',
-        borderRadius: 25,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
+        backgroundColor: colors.inputBackground,
+        borderRadius: 24,
+        paddingHorizontal: 18,
+        paddingVertical: 12,
         color: colors.text,
         maxHeight: 100,
         marginRight: 10,
+        fontSize: 15,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     sendButton: {
         backgroundColor: colors.primary,
-        width: 45,
-        height: 45,
-        borderRadius: 22.5,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
     },
     loadingContainer: {
         flex: 1,
@@ -274,7 +285,7 @@ const ChatDetailScreen = () => {
               </Text>
               <Text style={[
                   styles.timeText, 
-                  { color: isMe ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)' }
+                  { color: isMe ? 'rgba(255,255,255,0.7)' : colors.secondaryText }
               ]}>
                   {time}
               </Text>

@@ -19,6 +19,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { supabase } from '../lib/supabase';
 
 const { width } = Dimensions.get('window');
 const CARD_GAP = 10;
@@ -87,7 +88,52 @@ const SummaryScreen = () => {
     }
   };
 
+  const handleFinish = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('Erro', 'Usuário não encontrado.');
+        return;
+      }
+
+      // Get selected hobby labels
+      const selectedHobbyLabels = HOBBIES_LIST
+        .filter(h => selectedHobbies.includes(h.id))
+        .map(h => h.label);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          bio: text,
+          interests: selectedHobbyLabels,
+          updated_at: new Date(),
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        Alert.alert('Erro', error.message);
+        return;
+      }
+
+      // Navigate back to the main tabs
+      navigation.navigate('Tabs' as any);
+    } catch (err) {
+      Alert.alert('Erro', 'Não foi possível salvar. Tente novamente.');
+    }
+  };
+
   const isButtonDisabled = selectedHobbies.length < 3 || text.length < 10;
+
+  const dynamicStyles = StyleSheet.create({
+    boxPhoto: {
+      backgroundColor: theme === 'dark' ? colors.card : '#EAEAEA',
+    },
+    input: {
+      color: colors.text,
+      backgroundColor: colors.inputBackground,
+      borderColor: colors.border,
+    },
+  });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -96,7 +142,7 @@ const SummaryScreen = () => {
           <Ionicons name="chevron-back" size={28} color={colors.text} />
         </TouchableOpacity>
         <TouchableOpacity onPress={toggleTheme} style={styles.iconButton}>
-          <Ionicons name={theme === 'dark' ? 'sunny' : 'moon'} size={24} color={colors.text} />
+          <Ionicons name={theme === 'dark' ? 'sunny' : 'moon'} size={22} color={colors.secondaryText} />
         </TouchableOpacity>
       </View>
 
@@ -105,15 +151,15 @@ const SummaryScreen = () => {
         <View style={styles.gridPhotos}>
           <View style={styles.rowPhotos}>
             {[0, 1, 2].map((index) => (
-              <TouchableOpacity key={index} style={[styles.boxPhoto, { backgroundColor: theme === 'dark' ? '#333' : '#e0e0e0' }]} onPress={() => handleImagePick(index)}>
-                {images[index] ? <Image source={{ uri: images[index] }} style={styles.imagePhoto} /> : <Ionicons name="add" size={30} color="#888" />}
+              <TouchableOpacity key={index} style={[styles.boxPhoto, dynamicStyles.boxPhoto]} onPress={() => handleImagePick(index)}>
+                {images[index] ? <Image source={{ uri: images[index] }} style={styles.imagePhoto} /> : <Ionicons name="add" size={28} color={colors.secondaryText} />}
               </TouchableOpacity>
             ))}
           </View>
           <View style={styles.rowPhotos}>
             {[3, 4, 5].map((index) => (
-              <TouchableOpacity key={index} style={[styles.boxPhoto, { backgroundColor: theme === 'dark' ? '#333' : '#e0e0e0' }]} onPress={() => handleImagePick(index)}>
-                {images[index] ? <Image source={{ uri: images[index] }} style={styles.imagePhoto} /> : <Ionicons name="add" size={30} color="#888" />}
+              <TouchableOpacity key={index} style={[styles.boxPhoto, dynamicStyles.boxPhoto]} onPress={() => handleImagePick(index)}>
+                {images[index] ? <Image source={{ uri: images[index] }} style={styles.imagePhoto} /> : <Ionicons name="add" size={28} color={colors.secondaryText} />}
               </TouchableOpacity>
             ))}
           </View>
@@ -121,11 +167,11 @@ const SummaryScreen = () => {
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Bio</Text>
         <TextInput
-          style={[styles.input, { color: colors.text || '#000' || '#ccc', backgroundColor: theme === 'dark' ? '#1f1f1f' : '#f9f9f9' }]}
+          style={[styles.input, dynamicStyles.input]}
           onChangeText={setText}
           value={text}
           placeholder="Escreva algo sobre você..."
-          placeholderTextColor="#888"
+          placeholderTextColor={colors.placeholder}
           multiline
         />
 
@@ -134,11 +180,11 @@ const SummaryScreen = () => {
             <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
               Seus Hobbies
             </Text>
-            <Text style={{ color: selectedHobbies.length === 3 ? '#4CAF50' : '#888', fontWeight: 'bold' }}>
+            <Text style={{ color: selectedHobbies.length === 3 ? colors.primary : colors.secondaryText, fontWeight: '700' }}>
               {selectedHobbies.length}/3
             </Text>
           </View>
-          <Text style={{ color: '#888', marginBottom: 15 }}>Selecione o que você mais ama fazer.</Text>
+          <Text style={{ color: colors.secondaryText, marginBottom: 15, fontSize: 13 }}>Selecione o que você mais ama fazer.</Text>
 
           <View style={styles.hobbiesGrid}>
             {HOBBIES_LIST.map((hobby) => {
@@ -152,7 +198,7 @@ const SummaryScreen = () => {
                     styles.hobbyCard,
                     { 
                       borderWidth: 3, 
-                      borderColor: isSelected ? '#4CAF50' : 'transparent' 
+                      borderColor: isSelected ? colors.primary : 'transparent' 
                     },
                     pressed && { transform: [{ scale: 1.05 }] }
                   ]}
@@ -171,7 +217,7 @@ const SummaryScreen = () => {
                       ]}>
                         {isSelected && (
                           <View style={styles.checkIcon}>
-                            <Ionicons name="checkmark-circle" size={32} color="#4CAF50" />
+                            <Ionicons name="checkmark-circle" size={32} color={colors.primary} />
                           </View>
                         )}
                         <Text style={styles.cardText}>{hobby.label}</Text>
@@ -188,7 +234,7 @@ const SummaryScreen = () => {
       </ScrollView>
       <View style={styles.finishButtonContainer}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('Main')}
+          onPress={handleFinish}
           disabled={isButtonDisabled}
           style={[styles.finishButton, isButtonDisabled && styles.disabledButton]}
         >
@@ -205,17 +251,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 60, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10
   },
-  iconButton: { padding: 8, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 20 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 120, paddingBottom: 100 },
-  title: { fontSize: 28, fontWeight: '800', marginBottom: 15 },
+  iconButton: { padding: 8, backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: 20 },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 120, paddingBottom: 100 },
+  title: { fontSize: 26, fontWeight: '800', marginBottom: 15 },
   
   gridPhotos: { marginBottom: 30 },
   rowPhotos: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  boxPhoto: { width: '31%', aspectRatio: 1, borderRadius: 12, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  boxPhoto: { width: '31%', aspectRatio: 1, borderRadius: 14, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   imagePhoto: { width: '100%', height: '100%' },
 
-  sectionTitle: { fontSize: 22, fontWeight: '700', marginTop: 10, marginBottom: 10 },
-  input: { minHeight: 80, borderWidth: 1, borderRadius: 12, padding: 15, fontSize: 16, textAlignVertical: 'top' },
+  sectionTitle: { fontSize: 20, fontWeight: '700', marginTop: 10, marginBottom: 10 },
+  input: { minHeight: 80, borderWidth: 1, borderRadius: 14, padding: 16, fontSize: 15, textAlignVertical: 'top' },
 
   hobbiesContainer: { marginTop: 30 },
   hobbiesHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -225,16 +271,16 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     height: 100,
     marginBottom: CARD_GAP,
-    borderRadius: 15,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   cardImage: { width: '100%', height: '100%', justifyContent: 'flex-end' },
   cardOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 13,
   },
   cardText: {
     color: 'white',
@@ -262,18 +308,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   finishButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 12,
+    backgroundColor: '#1DB954',
+    padding: 16,
+    borderRadius: 28,
     alignItems: 'center',
+    shadowColor: '#1DB954',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   disabledButton: {
-    backgroundColor: '#a5d6a7',
+    backgroundColor: '#374151',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   finishButtonText: {
     color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
 

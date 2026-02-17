@@ -1,51 +1,54 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface StyledInputProps extends TextInputProps {
-  icon?: string;
+  icon?: string; // This will now be the *name* of the ionicon
   isPassword?: boolean;
 }
 
 const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, ...props }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const { colors } = useTheme();
+  const { colors, theme } = useTheme();
+
+  const iconColor = isFocused ? colors.primary : colors.placeholder;
 
   const styles = StyleSheet.create({
     container: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: colors.inputBackground,
-      borderRadius: 8,
-      paddingHorizontal: 15,
-      marginVertical: 10,
-      borderWidth: 1,
-      borderColor: colors.inputBackground,
-    },
-    containerFocused: {
-      borderColor: colors.primary,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      marginVertical: 8,
+      borderWidth: 1.5,
+      borderColor: isFocused ? colors.primary : 'transparent',
+      shadowColor: isFocused ? colors.primary : 'transparent',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: isFocused ? 0.15 : 0,
+      shadowRadius: isFocused ? 8 : 0,
+      elevation: isFocused ? 3 : 0,
     },
     icon: {
-      fontSize: 20,
-      color: colors.placeholder,
-      marginRight: 10,
+      marginRight: 12,
     },
     input: {
       flex: 1,
-      height: 50,
+      height: 52,
       color: colors.text,
-      fontSize: 16,
+      fontSize: 15,
+      fontWeight: '400',
     },
     eyeIcon: {
-      padding: 5,
+      padding: 6,
     }
   });
 
   return (
-    <View style={[styles.container, isFocused && styles.containerFocused]}>
-      {icon && <Text style={styles.icon}>{icon}</Text>}
+    <View style={styles.container}>
+      {icon && <Ionicons name={icon} size={20} color={iconColor} style={styles.icon} />}
       <TextInput
         style={styles.input}
         placeholderTextColor={colors.placeholder}
@@ -56,7 +59,7 @@ const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, ...
       />
       {isPassword && (
         <TouchableOpacity style={styles.eyeIcon} onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-          <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color={colors.placeholder} />
+          <Ionicons name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} size={22} color={iconColor} />
         </TouchableOpacity>
       )}
     </View>

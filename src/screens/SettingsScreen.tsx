@@ -17,6 +17,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { supabase } from '../lib/supabase';
 
 type RootStackParamList = {
   Initial: undefined;
@@ -57,27 +58,48 @@ const SettingsScreen = () => {
   // --- Estado para controlar a visibilidade da Modal ---
   const [modalVisible, setModalVisible] = useState(false);
 
-  const handleLogout = () => {
-    navigation.navigate('Initial');
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      Alert.alert('Erro', 'Não foi possível fazer o logout.');
+    }
+    // O listener em App.tsx cuidará da navegação
   };
 
   // --- Função para processar a exclusão ---
-  const handleDeleteAccount = () => {
-    setModalVisible(false); // Fecha a modal visualmente
+  const handleDeleteAccount = async () => {
+    setModalVisible(false);
 
-    // Pequeno delay para garantir que a modal fechou antes do Alerta
-    setTimeout(() => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('Erro', 'Usuário não encontrado.');
+        return;
+      }
+
+      // Delete user profile (cascades will handle related data)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error('Error deleting profile:', profileError);
+      }
+
+      // Sign out
+      await supabase.auth.signOut();
+
+      // Show confirmation
+      setTimeout(() => {
         Alert.alert(
-            "Conta Deletada",
-            "Sua conta foi excluída com sucesso. Esperamos te ver de novo!",
-            [
-                { 
-                    text: "OK", 
-                    onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Initial' }] }) 
-                }
-            ]
+          "Conta Deletada",
+          "Sua conta foi excluída com sucesso. Esperamos te ver de novo!",
         );
-    }, 300);
+      }, 300);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível deletar a conta. Tente novamente.');
+    }
   };
 
   const styles = StyleSheet.create({
@@ -86,18 +108,16 @@ const SettingsScreen = () => {
       backgroundColor: colors.background,
     },
     header: {
-      paddingTop: 20,
-      paddingBottom: 10,
-      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 12,
+      paddingHorizontal: 24,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      borderBottomWidth: 1,
-      borderBottomColor: colors.inputBackground,
     },
     headerTitle: {
-      fontSize: 22,
-      fontWeight: 'bold',
+      fontSize: 24,
+      fontWeight: '800',
       color: colors.text,
     },
     container: {
@@ -106,27 +126,28 @@ const SettingsScreen = () => {
     section: {
       marginTop: 20,
       marginBottom: 10,
-      paddingHorizontal: 20,
+      paddingHorizontal: 24,
     },
     sectionTitle: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: colors.placeholder,
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.secondaryText,
       marginBottom: 10,
       textTransform: 'uppercase',
-      letterSpacing: 1,
+      letterSpacing: 1.5,
     },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 15,
+      paddingVertical: 16,
       borderBottomWidth: 1,
-      borderBottomColor: colors.inputBackground,
+      borderBottomColor: colors.separator,
     },
     rowText: {
-      fontSize: 16,
+      fontSize: 15,
       color: colors.text,
+      fontWeight: '500',
     },
     versionContainer: {
       alignItems: 'center',
@@ -134,46 +155,47 @@ const SettingsScreen = () => {
       marginBottom: 50,
     },
     versionText: {
-      color: colors.placeholder,
-      fontSize: 14,
+      color: colors.secondaryText,
+      fontSize: 13,
       fontWeight: '600',
     },
     copyrightText: {
-      color: colors.placeholder,
-      fontSize: 12,
+      color: colors.secondaryText,
+      fontSize: 11,
       marginTop: 4,
     },
     // --- Estilos da Modal ---
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: colors.overlay,
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContainer: {
         width: width * 0.85,
-        backgroundColor: theme === 'dark' ? '#1E1E1E' : '#FFFFFF',
-        borderRadius: 20,
-        padding: 25,
+        backgroundColor: colors.card,
+        borderRadius: 24,
+        padding: 28,
         alignItems: 'center',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 12,
     },
     modalTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '700',
         color: colors.text,
         marginBottom: 10,
         textAlign: 'center',
     },
     modalMessage: {
         fontSize: 14,
-        color: colors.placeholder,
-        marginBottom: 25,
+        color: colors.secondaryText,
+        marginBottom: 24,
         textAlign: 'center',
+        lineHeight: 22,
     },
     modalButtonContainer: {
         flexDirection: 'row',
@@ -182,24 +204,24 @@ const SettingsScreen = () => {
     },
     modalButton: {
         flex: 1,
-        paddingVertical: 12,
-        borderRadius: 10,
+        paddingVertical: 14,
+        borderRadius: 14,
         alignItems: 'center',
         marginHorizontal: 5,
     },
     cancelButton: {
-        backgroundColor: theme === 'dark' ? '#333' : '#E0E0E0',
+        backgroundColor: colors.inputBackground,
     },
     confirmButton: {
-        backgroundColor: '#FF4444',
+        backgroundColor: colors.danger,
     },
     cancelButtonText: {
         color: colors.text,
-        fontWeight: 'bold',
+        fontWeight: '700',
     },
     confirmButtonText: {
         color: '#FFFFFF',
-        fontWeight: 'bold',
+        fontWeight: '700',
     }
   });
 
@@ -235,12 +257,9 @@ const SettingsScreen = () => {
           <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
             <Ionicons
               name={theme === 'dark' ? 'sunny' : 'moon'}
-              size={24}
-              color={colors.text}
+              size={22}
+              color={colors.secondaryText}
             />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={{ padding: 10 }}>
-            <Icon name="logout" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -251,7 +270,7 @@ const SettingsScreen = () => {
             text="Editar Perfil" 
             icon="account-edit-outline"
             rightContent={<Icon name="chevron-right" size={24} color={colors.text} />}
-            onPress={() => navigation.navigate('EditProfile')}
+            onPress={() => navigation.navigate('EditProfileScreen' as any)}
           />
           <SettingRow 
             text="Alterar Senha" 
@@ -294,13 +313,20 @@ const SettingsScreen = () => {
           />
         </Section>
         
-        <View style={{ marginVertical: 20, paddingHorizontal: 20 }}>
+        <View style={{ marginVertical: 20, paddingHorizontal: 24 }}>
+            <TouchableOpacity 
+              style={[styles.row, {justifyContent: 'center', borderBottomWidth: 0, marginBottom: 8}]}
+              onPress={handleLogout}
+            >
+                <Icon name="logout" size={20} color={colors.text} style={{ marginRight: 8 }} />
+                <Text style={{...styles.rowText, fontWeight: '700'}}>Sair da Conta</Text>
+            </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.row, {justifyContent: 'center', borderBottomWidth: 0}]}
               // --- Ao clicar, abre a modal ---
               onPress={() => setModalVisible(true)}
             >
-                <Text style={{...styles.rowText, color: '#FF4444', fontWeight: 'bold'}}>Deletar Conta</Text>
+                <Text style={{...styles.rowText, color: colors.danger, fontWeight: '700'}}>Deletar Conta</Text>
             </TouchableOpacity>
         </View>
 

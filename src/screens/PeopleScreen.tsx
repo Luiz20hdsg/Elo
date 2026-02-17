@@ -21,6 +21,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
+import Geolocation from 'react-native-geolocation-service';
+import { PermissionsAndroid, Platform as RNPlatform } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -38,6 +40,7 @@ type RecommendedProfile = {
   avatar_url: string;
   bio: string;
   interests: string[];
+  age: number | null;
   recommendation_score: number;
 };
 
@@ -66,11 +69,54 @@ const PeopleScreen = () => {
     fetchRecommendations();
   }, []);
 
+  const updateUserLocation = async (userId: string): Promise<void> => {
+    return new Promise((resolve) => {
+      const requestAndGetLocation = async () => {
+        try {
+          if (RNPlatform.OS === 'android') {
+            const granted = await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            );
+            if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+              console.log('Location permission denied');
+              resolve();
+              return;
+            }
+          }
+
+          Geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords;
+              const point = `POINT(${longitude} ${latitude})`;
+              await supabase
+                .from('profiles')
+                .update({ location: point })
+                .eq('id', userId);
+              resolve();
+            },
+            (error) => {
+              console.log('Geolocation error:', error.message);
+              resolve();
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+          );
+        } catch (err) {
+          console.log('Location permission error:', err);
+          resolve();
+        }
+      };
+      requestAndGetLocation();
+    });
+  };
+
   const fetchRecommendations = async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
+      // Update user location before fetching recommendations
+      await updateUserLocation(user.id);
+
       const { data, error } = await supabase.rpc('get_recommendations', {
         current_user_id: user.id,
       });
@@ -152,52 +198,85 @@ const PeopleScreen = () => {
   const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: colors.background },
     header: {
-      paddingTop: 20, paddingBottom: 10, paddingHorizontal: 20,
+      paddingTop: 16, paddingBottom: 12, paddingHorizontal: 24,
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      borderBottomWidth: 1, borderBottomColor: colors.inputBackground,
       zIndex: 10, backgroundColor: colors.background,
     },
-    headerTitle: { fontSize: 22, fontWeight: 'bold', color: colors.text },
+    headerTitle: { fontSize: 24, fontWeight: '800', color: colors.text },
     container: { flex: 1 },
     scrollContent: { paddingBottom: 120 },
     
     photoContainer: { height: height * 0.55, position: 'relative', backgroundColor: colors.inputBackground },
     photo: { width: width, height: '100%', resizeMode: 'cover' },
     
-    infoContainer: { padding: 20, marginTop: -20, backgroundColor: colors.background, borderTopLeftRadius: 30, borderTopRightRadius: 30, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
-    nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 },
-    nameText: { fontSize: 28, fontWeight: 'bold', color: colors.text },
+    infoContainer: {
+      padding: 24, marginTop: -24, backgroundColor: colors.background,
+      borderTopLeftRadius: 28, borderTopRightRadius: 28,
+      shadowColor: colors.shadow, shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 8,
+    },
+    nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+    nameText: { fontSize: 26, fontWeight: '800', color: colors.text },
     locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    locationText: { color: colors.placeholder, marginLeft: 5, fontSize: 14 },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 10, marginTop: 10 },
-    bioText: { fontSize: 15, color: colors.text, lineHeight: 22, opacity: 0.8, marginBottom: 25 },
+    locationText: { color: colors.secondaryText, marginLeft: 5, fontSize: 13, fontWeight: '500' },
+    sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginBottom: 10, marginTop: 10 },
+    bioText: { fontSize: 15, color: colors.secondaryText, lineHeight: 24, marginBottom: 24 },
     hobbiesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    hobbyChip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: colors.primary },
-    hobbyText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
+    hobbyChip: {
+      paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20,
+      backgroundColor: theme === 'dark' ? 'rgba(29, 185, 84, 0.12)' : 'rgba(29, 185, 84, 0.08)',
+      borderWidth: 1, borderColor: colors.primary,
+    },
+    hobbyText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
     
-    actionButtonsContainer: { position: 'absolute', bottom: 20, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 20 },
-    actionButton: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8, backgroundColor: theme === 'dark' ? '#2A2A2A' : '#FFF' },
-    passButton: { borderWidth: 1, borderColor: '#FF4444' },
-    likeButton: { backgroundColor: colors.primary },
-    superLikeButton: { width: 75, height: 75, borderRadius: 37.5, backgroundColor: '#FFF', borderWidth: 3, borderColor: '#FFD700', justifyContent: 'center', alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 5, elevation: 10, marginBottom: 5 },
+    actionButtonsContainer: {
+      position: 'absolute', bottom: 24, left: 0, right: 0,
+      flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 18,
+    },
+    actionButton: {
+      width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center',
+      shadowColor: colors.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 8,
+      backgroundColor: colors.card, borderWidth: 1, borderColor: colors.separator,
+    },
+    passButton: { borderWidth: 1.5, borderColor: colors.danger },
+    likeButton: { backgroundColor: colors.primary, borderColor: colors.primary },
+    superLikeButton: {
+      width: 72, height: 72, borderRadius: 36, backgroundColor: colors.card,
+      borderWidth: 2.5, borderColor: '#FFD700',
+      justifyContent: 'center', alignItems: 'center',
+      shadowColor: '#FFD700', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 10,
+      marginBottom: 4,
+    },
     heartOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 100, pointerEvents: 'none' },
-    emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+    emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
     loadingState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
     modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-    modalContent: { backgroundColor: colors.background, borderTopLeftRadius: 25, borderTopRightRadius: 25, height: '85%', padding: 20 },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: colors.inputBackground, paddingBottom: 15 },
-    modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
-    filterSection: { marginBottom: 25 },
-    filterLabel: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 12 },
+    modalContent: {
+      backgroundColor: colors.background, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+      height: '85%', padding: 24,
+    },
+    modalHeader: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      marginBottom: 24, borderBottomWidth: 1, borderBottomColor: colors.separator, paddingBottom: 16,
+    },
+    modalTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
+    filterSection: { marginBottom: 24 },
+    filterLabel: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 12 },
     
     rowInputs: { flexDirection: 'row', alignItems: 'center', gap: 15 },
     inputGroup: { flex: 1 },
-    inputLabelSmall: { fontSize: 12, color: colors.placeholder, marginBottom: 5 },
-    inputBox: { backgroundColor: theme === 'dark' ? '#1E1E1E' : '#F5F5F5', borderRadius: 10, padding: 12, color: colors.text, fontSize: 16, borderWidth: 1, borderColor: colors.inputBackground, textAlign: 'center' },
+    inputLabelSmall: { fontSize: 12, color: colors.secondaryText, marginBottom: 5, fontWeight: '500' },
+    inputBox: {
+      backgroundColor: colors.inputBackground, borderRadius: 14, padding: 14,
+      color: colors.text, fontSize: 16, borderWidth: 1, borderColor: colors.border, textAlign: 'center',
+    },
     
-    applyButton: { backgroundColor: colors.primary, padding: 15, borderRadius: 30, alignItems: 'center', marginTop: 10, marginBottom: 30 },
-    applyButtonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' }
+    applyButton: {
+      backgroundColor: colors.primary, padding: 16, borderRadius: 28, alignItems: 'center',
+      marginTop: 10, marginBottom: 30,
+      shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+    },
+    applyButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 }
   });
 
   if (loading) {
@@ -216,16 +295,13 @@ const PeopleScreen = () => {
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pessoas</Text>
+        <Text style={styles.headerTitle}>Descobrir</Text>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <TouchableOpacity onPress={() => setFilterVisible(true)} style={{ padding: 10 }}>
-             <Ionicons name="options-outline" size={24} color={colors.text} />
+             <Ionicons name="options-outline" size={22} color={colors.secondaryText} />
           </TouchableOpacity>
           <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
-            <Ionicons name={theme === 'dark' ? 'sunny' : 'moon'} size={24} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={{ padding: 10 }}>
-            <Ionicons name="log-out-outline" size={24} color={colors.text} />
+            <Ionicons name={theme === 'dark' ? 'sunny' : 'moon'} size={22} color={colors.secondaryText} />
           </TouchableOpacity>
         </View>
       </View>
@@ -243,7 +319,10 @@ const PeopleScreen = () => {
 
                 <View style={styles.infoContainer}>
                     <View style={styles.nameRow}>
-                        <Text style={styles.nameText}>{currentProfile.full_name || currentProfile.username}</Text>
+                        <Text style={styles.nameText}>
+                          {currentProfile.full_name || currentProfile.username}
+                          {currentProfile.age && `, ${currentProfile.age}`}
+                        </Text>
                         {/* Adicionar idade e verificação se disponível */}
                     </View>
                     <View style={styles.locationRow}>
@@ -269,15 +348,23 @@ const PeopleScreen = () => {
             </ScrollView>
         ) : (
             <View style={styles.emptyState}>
-                <View style={[styles.actionButton, {backgroundColor: colors.inputBackground, width: 100, height: 100, borderRadius: 50, marginBottom: 20}]}>
-                    <Ionicons name="people-outline" size={50} color={colors.placeholder} />
+                <View style={{
+                  backgroundColor: theme === 'dark' ? colors.card : colors.surface,
+                  width: 100, height: 100, borderRadius: 50,
+                  justifyContent: 'center', alignItems: 'center', marginBottom: 20,
+                }}>
+                    <Ionicons name="heart-dislike-outline" size={44} color={colors.secondaryText} />
                 </View>
-                <Text style={[styles.headerTitle, {textAlign: 'center'}]}>Não há mais ninguém aqui</Text>
-                <Text style={{color: colors.placeholder, textAlign: 'center', marginTop: 10}}>
-                    Volte mais tarde para ver novas pessoas na sua região.
+                <Text style={[styles.headerTitle, {textAlign: 'center'}]}>Ninguém por aqui</Text>
+                <Text style={{color: colors.secondaryText, textAlign: 'center', marginTop: 10, fontSize: 14, lineHeight: 22}}>
+                    Volte mais tarde para ver{'\n'}novas pessoas na sua região.
                 </Text>
-                <TouchableOpacity onPress={fetchRecommendations} style={{marginTop: 30, padding: 10}}>
-                    <Text style={{color: colors.primary, fontWeight: 'bold'}}>Buscar Novamente</Text>
+                <TouchableOpacity onPress={fetchRecommendations} style={{
+                  marginTop: 28, paddingVertical: 12, paddingHorizontal: 28,
+                  backgroundColor: colors.primary, borderRadius: 24,
+                  shadowColor: colors.primary, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4,
+                }}>
+                    <Text style={{color: '#FFF', fontWeight: '700', fontSize: 15}}>Buscar Novamente</Text>
                 </TouchableOpacity>
             </View>
         )}

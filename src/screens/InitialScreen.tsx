@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   Text,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -26,42 +27,120 @@ const InitialScreen = () => {
   const navigation = useNavigation<InitialScreenNavigationProp>();
   const { colors } = useTheme();
 
-  const styles = StyleSheet.create({
-    background: {
-      flex: 1,
-      justifyContent: 'flex-end',
-    },
-    buttonContainer: {
-      paddingHorizontal: 24,
-      paddingBottom: 50,
-    },
-    button: {
-      backgroundColor: colors.primary,
-      paddingVertical: 15,
-      borderRadius: 8,
-      alignItems: 'center',
-    },
-    buttonText: {
-      color: '#ffffff',
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-  });
-
   return (
     <ImageBackground
       source={require('../assets/images/initial_background.png')}
       resizeMode="cover"
       style={styles.background}>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.buttonText}>Entrar</Text>
-        </TouchableOpacity>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      
+      <View style={styles.overlay} />
+      
+      <View style={styles.content}>
+        <View style={styles.topSection}>
+          <Text style={styles.logo}>elo</Text>
+          <Text style={styles.tagline}>Conecte-se com quem{'\n'}realmente importa</Text>
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.navigate('Login')}
+            activeOpacity={0.85}>
+            <Text style={styles.buttonText}>Começar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.outlineButton}
+            onPress={() => navigation.navigate('Login')}
+            activeOpacity={0.85}>
+            <Text style={styles.outlineButtonText}>Já tenho uma conta</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.disclaimer}>
+            Ao continuar, você concorda com nossos{'\n'}Termos de Uso e Política de Privacidade
+          </Text>
+        </View>
       </View>
     </ImageBackground>
   );
 };
+
+const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingTop: 120,
+  },
+  topSection: {
+    alignItems: 'center',
+  },
+  logo: {
+    fontSize: 72,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    fontStyle: 'italic',
+    letterSpacing: -2,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 10,
+  },
+  tagline: {
+    fontSize: 18,
+    color: 'rgba(255, 255, 255, 0.85)',
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '400',
+    lineHeight: 26,
+    letterSpacing: 0.3,
+  },
+  buttonContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 50,
+  },
+  button: {
+    paddingVertical: 17,
+    borderRadius: 28,
+    alignItems: 'center',
+    shadowColor: '#1DB954',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  outlineButton: {
+    paddingVertical: 17,
+    borderRadius: 28,
+    alignItems: 'center',
+    marginTop: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  outlineButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  disclaimer: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 20,
+    lineHeight: 16,
+  },
+});
 
 export default InitialScreen;

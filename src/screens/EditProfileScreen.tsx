@@ -65,7 +65,11 @@ const EditProfileScreen = () => {
     }
   }, []);
 
-  useFocusEffect(fetchProfile);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchProfile();
+    }, [fetchProfile]),
+  );
 
   const handleAvatarChange = async () => {
     const result = await launchImageLibrary({
@@ -181,17 +185,17 @@ const EditProfileScreen = () => {
       justifyContent: 'space-between',
       padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: 'rgba(255,255,255,0.05)',
+      borderBottomColor: colors.separator,
     },
     headerTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
+      fontSize: 18,
+      fontWeight: '700',
       color: colors.text,
     },
     saveText: {
       color: colors.primary,
-      fontWeight: 'bold',
-      fontSize: 16,
+      fontWeight: '700',
+      fontSize: 15,
     },
     content: {
       padding: 20,
@@ -206,7 +210,7 @@ const EditProfileScreen = () => {
       height: 120,
       borderRadius: 60,
       borderWidth: 3,
-      borderColor: colors.inputBackground,
+      borderColor: colors.primary,
     },
     changeAvatarButton: {
       position: 'absolute',
@@ -219,18 +223,19 @@ const EditProfileScreen = () => {
       borderColor: colors.background,
     },
     label: {
-      color: colors.placeholder,
-      fontSize: 14,
+      color: colors.secondaryText,
+      fontSize: 13,
       fontWeight: '600',
       marginBottom: -2,
       marginLeft: 4,
+      marginTop: 6,
     },
     photosTitle: {
       color: colors.text,
       fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 15,
-      marginTop: 10,
+      fontWeight: '700',
+      marginBottom: 12,
+      marginTop: 14,
     },
     photosGrid: {
       flexDirection: 'row',
@@ -240,8 +245,8 @@ const EditProfileScreen = () => {
     photoBox: {
       width: PHOTO_SIZE,
       height: PHOTO_SIZE,
-      backgroundColor: theme === 'dark' ? '#1E1E1E' : '#E0E0E0',
-      borderRadius: 12,
+      backgroundColor: colors.inputBackground,
+      borderRadius: 14,
       justifyContent: 'center',
       alignItems: 'center',
       overflow: 'hidden',
@@ -251,7 +256,7 @@ const EditProfileScreen = () => {
       height: '100%',
     },
     photoSubtext: {
-      color: colors.placeholder,
+      color: colors.secondaryText,
       marginBottom: 15,
       fontSize: 13,
     },
@@ -259,7 +264,7 @@ const EditProfileScreen = () => {
       borderWidth: 0,
     },
     photoBoxDashed: {
-      borderColor: colors.placeholder,
+      borderColor: colors.secondaryText,
       borderStyle: 'dashed',
       borderWidth: 1,
     },
