@@ -20,6 +20,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { changeLanguage, LANGUAGES } from '../i18n';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { openManageSubscriptions } from '../lib/revenueCat';
 
 type RootStackParamList = {
   Initial: undefined;
@@ -54,6 +56,7 @@ const SettingsScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { t, i18n } = useTranslation();
+  const { plan, isPaid, currentPeriodEnd } = useSubscription();
   
   const [msgNotifications, setMsgNotifications] = useState(true);
   const [matchNotifications, setMatchNotifications] = useState(true);
@@ -288,6 +291,59 @@ const SettingsScreen = () => {
             onPress={() => navigation.navigate('ForgotPassword')}
             rightContent={<Icon name="chevron-right" size={24} color={colors.text} />}
           />
+        </Section>
+
+        {/* Subscription Section */}
+        <Section title={t('settings.subscription')}>
+          <SettingRow
+            text={t('settings.currentPlan')}
+            icon="crown-outline"
+            rightContent={
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{
+                  backgroundColor: plan === 'premium_plus' ? '#FFD700' : plan === 'light' ? colors.primary : colors.card,
+                  paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10,
+                  borderWidth: plan === 'free' ? 1 : 0, borderColor: colors.border,
+                }}>
+                  <Text style={{
+                    color: plan === 'premium_plus' ? '#000' : plan === 'light' ? '#FFF' : colors.text,
+                    fontSize: 12, fontWeight: '800',
+                  }}>
+                    {plan === 'premium_plus' ? 'PREMIUM+' : plan === 'light' ? 'LIGHT' : 'FREE'}
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size={24} color={colors.text} />
+              </View>
+            }
+            onPress={() => navigation.navigate('Paywall' as any)}
+          />
+          {isPaid() && currentPeriodEnd && (
+            <SettingRow
+              text={t('settings.renewalDate')}
+              icon="calendar-clock"
+              rightContent={
+                <Text style={{ color: colors.secondaryText, fontSize: 13 }}>
+                  {new Date(currentPeriodEnd).toLocaleDateString()}
+                </Text>
+              }
+            />
+          )}
+          {isPaid() && (
+            <SettingRow
+              text={t('settings.manageSub')}
+              icon="credit-card-outline"
+              rightContent={<Icon name="chevron-right" size={24} color={colors.text} />}
+              onPress={openManageSubscriptions}
+            />
+          )}
+          {!isPaid() && (
+            <SettingRow
+              text={t('settings.upgradePlan')}
+              icon="star-outline"
+              rightContent={<Icon name="chevron-right" size={24} color={colors.primary} />}
+              onPress={() => navigation.navigate('Paywall' as any)}
+            />
+          )}
         </Section>
         
         <Section title={t('settings.notifications')}>

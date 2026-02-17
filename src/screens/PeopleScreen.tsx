@@ -24,11 +24,13 @@ import { supabase } from '../lib/supabase';
 import Geolocation from 'react-native-geolocation-service';
 import { PermissionsAndroid, Platform as RNPlatform } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 const { width, height } = Dimensions.get('window');
 
 type RootStackParamList = {
   Initial: undefined;
+  Paywall: undefined;
 };
 
 type PeopleScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -43,16 +45,32 @@ type RecommendedProfile = {
   interests: string[];
   age: number | null;
   recommendation_score: number;
+  user_plan?: string;
 };
 
 const PeopleScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<PeopleScreenNavigationProp>();
   const { t } = useTranslation();
+  const {
+    canLike,
+    canSuperLike,
+    canRewind,
+    useDailyAction,
+    getRemainingLikes,
+    getRemainingSuperLikes,
+    isFree,
+    canUseAdvancedFilters,
+    plan,
+    dailyLikeLimit,
+    likesUsedToday,
+    refreshPlan,
+  } = useSubscription();
 
   const [recommendations, setRecommendations] = useState<RecommendedProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [limitReachedVisible, setLimitReachedVisible] = useState(false);
   
   const [filterVisible, setFilterVisible] = useState(false);
   // Mantenha os filtros se eles ainda forem úteis para uma futura filtragem no lado do cliente ou servidor
@@ -159,6 +177,15 @@ const PeopleScreen = () => {
   const handleInteraction = async (targetUserId: string, action: 'like' | 'dislike') => {
     if (!currentProfile) return;
 
+    // Verificar limite de likes para ação 'like'
+    if (action === 'like') {
+      const result = await useDailyAction('like');
+      if (!result.allowed) {
+        setLimitReachedVisible(true);
+        return;
+      }
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -195,6 +222,55 @@ const PeopleScreen = () => {
       Alert.alert(t('people.itsAMatch'), t('people.matchMessage', { name: currentProfile.full_name || currentProfile.username }));
       // Aqui você pode navegar para a tela de chat ou mostrar uma animação de match
     }
+  };
+
+  const handleSuperLike = async () => {
+    if (!currentProfile) return;
+    
+    const result = await useDailyAction('super_like');
+    if (!result.allowed) {
+      setLimitReachedVisible(true);
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Animação de Super Like
+    Animated.parallel([
+      Animated.spring(heartScale, { toValue: 1, friction: 4, useNativeDriver: true }),
+      Animated.timing(heartOpacity, { toValue: 1, duration: 100, useNativeDriver: true })
+    ]).start(() => {
+      setTimeout(() => {
+        Animated.timing(heartOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+          heartScale.setValue(0);
+          nextProfile();
+        });
+      }, 600);
+    });
+
+    // Registrar como like (super like é um like com flag especial)
+    const { data: isMatch, error } = await supabase.rpc('handle_interaction', {
+      p_user_id: user.id,
+      p_target_user_id: currentProfile.id,
+      p_action: 'like',
+    });
+
+    if (error) {
+      console.error('Error handling super like:', error);
+    }
+
+    if (isMatch) {
+      Alert.alert(t('people.itsAMatch'), t('people.matchMessage', { name: currentProfile.full_name || currentProfile.username }));
+    }
+  };
+
+  const handleFilterPress = () => {
+    if (!canUseAdvancedFilters) {
+      setLimitReachedVisible(true);
+      return;
+    }
+    setFilterVisible(true);
   };
 
   const styles = StyleSheet.create({
@@ -278,7 +354,58 @@ const PeopleScreen = () => {
       marginTop: 10, marginBottom: 30,
       shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
     },
-    applyButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 }
+    applyButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
+    // Likes counter badge
+    likesCounter: {
+      position: 'absolute', top: -8, right: -8,
+      backgroundColor: colors.primary, borderRadius: 10,
+      paddingHorizontal: 6, paddingVertical: 2,
+      minWidth: 20, alignItems: 'center',
+      borderWidth: 2, borderColor: colors.background,
+    },
+    likesCounterText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
+    // Limit modal
+    limitModalOverlay: {
+      flex: 1, justifyContent: 'center', alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    limitModalContent: {
+      backgroundColor: colors.background, borderRadius: 24,
+      padding: 28, marginHorizontal: 30, alignItems: 'center',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.25, shadowRadius: 16, elevation: 10,
+    },
+    limitIconCircle: {
+      width: 70, height: 70, borderRadius: 35,
+      backgroundColor: colors.primary, justifyContent: 'center',
+      alignItems: 'center', marginBottom: 18,
+    },
+    limitTitle: {
+      fontSize: 20, fontWeight: '800', color: colors.text,
+      textAlign: 'center', marginBottom: 10,
+    },
+    limitSubtitle: {
+      fontSize: 14, color: colors.secondaryText, textAlign: 'center',
+      lineHeight: 22, marginBottom: 22,
+    },
+    limitUpgradeButton: {
+      backgroundColor: colors.primary, paddingVertical: 14,
+      paddingHorizontal: 36, borderRadius: 28, alignItems: 'center',
+      width: '100%', marginBottom: 10,
+      shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+    },
+    limitUpgradeText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+    limitCloseButton: { paddingVertical: 10 },
+    limitCloseText: { color: colors.secondaryText, fontSize: 14, fontWeight: '600' },
+    // Plan badge on profile card
+    planBadge: {
+      position: 'absolute', top: 16, left: 16, zIndex: 10,
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 10,
+      paddingVertical: 5, borderRadius: 12, gap: 4,
+    },
+    planBadgeText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
   });
 
   if (loading) {
@@ -299,8 +426,13 @@ const PeopleScreen = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('people.title')}</Text>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <TouchableOpacity onPress={() => setFilterVisible(true)} style={{ padding: 10 }}>
-             <Ionicons name="options-outline" size={22} color={colors.secondaryText} />
+          <TouchableOpacity onPress={handleFilterPress} style={{ padding: 10 }}>
+             <Ionicons name="options-outline" size={22} color={canUseAdvancedFilters ? colors.secondaryText : colors.secondaryText} />
+             {!canUseAdvancedFilters && (
+               <View style={{ position: 'absolute', top: 6, right: 6 }}>
+                 <Ionicons name="lock-closed" size={10} color={colors.primary} />
+               </View>
+             )}
           </TouchableOpacity>
           <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
             <Ionicons name={theme === 'dark' ? 'sunny' : 'moon'} size={22} color={colors.secondaryText} />
@@ -376,11 +508,21 @@ const PeopleScreen = () => {
                 <TouchableOpacity style={[styles.actionButton, styles.passButton]} onPress={() => handleInteraction(currentProfile.id, 'dislike')}>
                     <Ionicons name="close" size={32} color="#FF4444" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.superLikeButton} onPress={() => console.log("Super Like não implementado")}>
+                <TouchableOpacity style={styles.superLikeButton} onPress={handleSuperLike}>
                     <Ionicons name="heart" size={36} color="#FFD700" />
+                    {getRemainingSuperLikes() !== -1 && (
+                      <View style={styles.likesCounter}>
+                        <Text style={styles.likesCounterText}>{getRemainingSuperLikes()}</Text>
+                      </View>
+                    )}
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.actionButton, styles.likeButton]} onPress={() => handleInteraction(currentProfile.id, 'like')}>
                     <Ionicons name="heart" size={32} color="#FFF" />
+                    {getRemainingLikes() !== -1 && (
+                      <View style={styles.likesCounter}>
+                        <Text style={styles.likesCounterText}>{getRemainingLikes()}</Text>
+                      </View>
+                    )}
                 </TouchableOpacity>
             </View>
         )}
@@ -443,6 +585,39 @@ const PeopleScreen = () => {
 
                 </ScrollView>
             </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Limite Atingido / Paywall */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={limitReachedVisible}
+        onRequestClose={() => setLimitReachedVisible(false)}
+      >
+        <View style={styles.limitModalOverlay}>
+          <View style={styles.limitModalContent}>
+            <View style={styles.limitIconCircle}>
+              <Ionicons name="lock-closed" size={30} color="#FFF" />
+            </View>
+            <Text style={styles.limitTitle}>{t('people.limitReachedTitle')}</Text>
+            <Text style={styles.limitSubtitle}>{t('people.limitReachedSubtitle')}</Text>
+            <TouchableOpacity
+              style={styles.limitUpgradeButton}
+              onPress={() => {
+                setLimitReachedVisible(false);
+                navigation.navigate('Paywall' as any);
+              }}
+            >
+              <Text style={styles.limitUpgradeText}>{t('people.upgradePlan')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.limitCloseButton}
+              onPress={() => setLimitReachedVisible(false)}
+            >
+              <Text style={styles.limitCloseText}>{t('people.maybeLater')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 

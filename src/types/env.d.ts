@@ -5,4 +5,6 @@ declare module 'react-native-dotenv' {
   export const GOOGLE_WEB_CLIENT_ID: string;
   export const BYPASS_EMAIL: string;
   export const BYPASS_PASSWORD: string;
+  export const REVENUECAT_APPLE_KEY: string;
+  export const REVENUECAT_GOOGLE_KEY: string;
 }

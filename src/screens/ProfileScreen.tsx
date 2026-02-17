@@ -19,6 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 type RootStackParamList = {
   Initial: undefined;
@@ -35,6 +36,14 @@ const ProfileScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { t } = useTranslation();
+  const {
+    plan,
+    pendingLikesCount,
+    canSeeWhoLiked,
+    isPaid,
+    isPremiumPlus,
+    isAdFree,
+  } = useSubscription();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -483,10 +492,20 @@ const ProfileScreen = () => {
             </View>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>
-              {profile?.full_name || t('profile.user')}
-              {profile?.age && `, ${profile.age}`}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Text style={styles.userName}>
+                {profile?.full_name || t('profile.user')}
+                {profile?.age && `, ${profile.age}`}
+              </Text>
+              {isPremiumPlus() && (
+                <View style={{
+                  backgroundColor: '#FFD700', borderRadius: 6,
+                  paddingHorizontal: 6, paddingVertical: 2,
+                }}>
+                  <Text style={{ color: '#000', fontSize: 10, fontWeight: '900' }}>⭐ VIP</Text>
+                </View>
+              )}
+            </View>
             <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditProfileScreen' as any)}>
               <Text style={styles.editButtonText}>{t('profile.completeProfile')}</Text>
             </TouchableOpacity>
@@ -534,21 +553,50 @@ const ProfileScreen = () => {
         </ScrollView>
 
         <View style={styles.actionGrid}>
-          <TouchableOpacity style={styles.actionCard}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => {
+              if (!canSeeWhoLiked) {
+                navigation.navigate('Paywall' as any);
+              }
+              // TODO: Navigate to "Who liked you" screen
+            }}
+          >
             <View style={styles.iconCircle}>
-              <Ionicons name="star" size={20} color="#FFF" />
+              <Ionicons name="people" size={20} color="#FFF" />
+            </View>
+            <Text style={styles.actionTitle}>{t('profile.whoLikedYou')}</Text>
+            {pendingLikesCount > 0 ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
+                <Text style={[styles.actionSubtitle, { color: colors.primary, fontWeight: '700' }]}>
+                  {pendingLikesCount}
+                </Text>
+                {!canSeeWhoLiked && (
+                  <Ionicons name="lock-closed" size={12} color={colors.primary} />
+                )}
+              </View>
+            ) : (
+              <Text style={styles.actionSubtitle}>{t('profile.noLikesYet')}</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => {
+              if (!isPaid()) {
+                navigation.navigate('Paywall' as any);
+              }
+              // TODO: Activate boost
+            }}
+          >
+            <View style={styles.iconCircle}>
+              <Ionicons name="rocket" size={20} color="#FFF" />
             </View>
             <Text style={styles.actionTitle}>{t('profile.spotlight')}</Text>
             <Text style={styles.actionSubtitle}>{t('profile.gainVisibility')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={styles.iconCircle}>
-              {/* --- MUDANÇA AQUI: Ícone e Texto alterados --- */}
-              <Ionicons name="heart" size={20} color="#FFF" />
-            </View>
-            <Text style={styles.actionTitle}>{t('profile.superLike')}</Text>
-            <Text style={styles.actionSubtitle}>{t('profile.getAttention')}</Text>
+            {!isPaid() && (
+              <Ionicons name="lock-closed" size={12} color={colors.secondaryText} style={{ marginTop: 4 }} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -573,7 +621,7 @@ const ProfileScreen = () => {
                         </Text>
                         <TouchableOpacity 
                             style={styles.premiumButton}
-                            onPress={() => setSelectedTab(slide.id as any)}
+                            onPress={() => navigation.navigate('Paywall' as any)}
                         >
                             <Text style={styles.premiumButtonText}>
                                 {t('profile.explore')} {slide.title}

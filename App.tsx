@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Session } from '@supabase/supabase-js';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
 import LoginScreen from './src/screens/LoginScreen';
 import InitialScreen from './src/screens/InitialScreen';
@@ -15,11 +16,13 @@ import EditProfileScreen from './src/screens/EditProfileScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import PhotoTipsScreen from './src/screens/PhotoTipsScreen';
 import SummaryScreen from './src/screens/SummaryScreen';
+import PaywallScreen from './src/screens/PaywallScreen';
 
 import { ThemeProvider } from './src/contexts/ThemeContext';
+import { SubscriptionProvider } from './src/contexts/SubscriptionContext';
 import { supabase } from './src/lib/supabase';
 import { notificationService } from './src/lib/notificationService';
-import { BYPASS_EMAIL, BYPASS_PASSWORD } from 'react-native-dotenv';
+import { BYPASS_EMAIL, BYPASS_PASSWORD, REVENUECAT_APPLE_KEY, REVENUECAT_GOOGLE_KEY } from 'react-native-dotenv';
 import './src/i18n'; // Initialize i18n
 
 const Stack = createNativeStackNavigator();
@@ -94,6 +97,11 @@ const MainNavigator = () => (
       component={ForgotPasswordScreen}
       options={{ headerShown: false }}
     />
+    <Stack.Screen
+      name="Paywall"
+      component={PaywallScreen}
+      options={{ headerShown: false, presentation: 'modal' }}
+    />
   </Stack.Navigator>
 );
 
@@ -105,6 +113,15 @@ function App() {
   useEffect(() => {
     // Initialize OneSignal
     notificationService.init();
+
+    // Initialize RevenueCat SDK (as early as possible)
+    Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.ERROR);
+
+    const apiKey = Platform.OS === 'ios' ? REVENUECAT_APPLE_KEY : REVENUECAT_GOOGLE_KEY;
+    if (apiKey && !apiKey.startsWith('YOUR_')) {
+      Purchases.configure({ apiKey });
+      console.log('[RevenueCat] Configured in App.tsx');
+    }
   }, []);
 
   useEffect(() => {
@@ -164,7 +181,13 @@ function App() {
       <ThemeProvider>
         <NavigationContainer>
           {/* Se existe uma sessão, mostra o MainNavigator, senão, o AuthNavigator */}
-          {session && session.user ? <MainNavigator /> : <AuthNavigator />}
+          {session && session.user ? (
+            <SubscriptionProvider>
+              <MainNavigator />
+            </SubscriptionProvider>
+          ) : (
+            <AuthNavigator />
+          )}
         </NavigationContainer>
       </ThemeProvider>
     </GestureHandlerRootView>

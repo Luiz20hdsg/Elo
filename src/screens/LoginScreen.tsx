@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   Platform,
+  Image,
 } from 'react-native';
 import StyledButton from '../components/StyledButton';
 import StyledInput from '../components/StyledInput';
@@ -102,6 +103,7 @@ const LoginScreen = () => {
     safeArea: { flex: 1, backgroundColor: colors.background },
     header: { position: 'absolute', top: 60, left: 20, right: 20, zIndex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     container: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 },
+    logoImage: { width: 100, height: 100, marginBottom: 4, alignSelf: 'center' },
     logo: { fontSize: 56, fontWeight: '900', color: colors.primary, textAlign: 'center', marginBottom: 8, fontStyle: 'italic', letterSpacing: -2 },
     title: { fontSize: 28, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 6 },
     subtitle: { fontSize: 13, color: colors.secondaryText, textAlign: 'center', marginBottom: 36, letterSpacing: 1, lineHeight: 20 },
@@ -136,6 +138,11 @@ const LoginScreen = () => {
 
       <View style={styles.container}>
         <Text style={styles.logo}>elo</Text>
+        <Image
+          source={require('../assets/images/logo_elo_sem_fundo.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>{t('login.welcome')}</Text>
         <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
 
