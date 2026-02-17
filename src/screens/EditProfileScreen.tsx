@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase';
 import StyledInput from '../components/StyledInput';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { decode } from 'base64-arraybuffer';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const PHOTO_GAP = 10;
@@ -27,6 +28,7 @@ const PHOTO_SIZE = (width - 40 - (2 * PHOTO_GAP)) / 3; // 3 fotos por linha
 const EditProfileScreen = () => {
   const { colors, theme } = useTheme();
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState('');
@@ -40,7 +42,7 @@ const EditProfileScreen = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não encontrado');
+      if (!user) throw new Error(t('editProfile.userNotFound'));
 
       const { data, error, status } = await supabase
         .from('profiles')
@@ -58,7 +60,7 @@ const EditProfileScreen = () => {
       }
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Erro ao carregar perfil', error.message);
+      Alert.alert(t('editProfile.loadError'), error.message);
       }
     } finally {
       setLoading(false);
@@ -85,7 +87,7 @@ const EditProfileScreen = () => {
 
     const image = result.assets[0];
     if (!image.base64) {
-      Alert.alert('Erro', 'Não foi possível obter a imagem em base64.');
+      Alert.alert(t('common.error'), t('editProfile.base64Error'));
       return;
     }
 
@@ -94,7 +96,7 @@ const EditProfileScreen = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não encontrado');
+      if (!user) throw new Error(t('editProfile.userNotFound'));
 
       const filePath = `${user.id}`;
       const contentType = image.type || 'image/png';
@@ -116,10 +118,10 @@ const EditProfileScreen = () => {
         .eq('id', user.id);
 
       setAvatarUrl(newAvatarUrl);
-      Alert.alert('Sucesso', 'Avatar atualizado!');
+      Alert.alert(t('common.success'), t('editProfile.avatarUpdated'));
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Erro ao atualizar avatar', error.message);
+        Alert.alert(t('editProfile.avatarError'), error.message);
       }
     } finally {
       setLoading(false);
@@ -132,7 +134,7 @@ const EditProfileScreen = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não encontrado');
+      if (!user) throw new Error(t('editProfile.userNotFound'));
 
       const updates = {
         id: user.id,
@@ -146,11 +148,11 @@ const EditProfileScreen = () => {
 
       if (error) throw error;
 
-      Alert.alert('Sucesso', 'Perfil atualizado!');
+      Alert.alert(t('common.success'), t('editProfile.profileUpdated'));
       navigation.goBack();
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Erro ao salvar', error.message);
+        Alert.alert(t('editProfile.saveError'), error.message);
       }
     } finally {
       setLoading(false);
@@ -298,9 +300,9 @@ const EditProfileScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="close" size={28} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Editar Perfil</Text>
+        <Text style={styles.headerTitle}>{t('editProfile.title')}</Text>
         <TouchableOpacity onPress={handleSave} disabled={loading}>
-          <Text style={styles.saveText}>Salvar</Text>
+          <Text style={styles.saveText}>{t('common.save')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -319,34 +321,34 @@ const EditProfileScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>Seu nome</Text>
+        <Text style={styles.label}>{t('editProfile.yourName')}</Text>
         <StyledInput
           value={fullName}
           onChangeText={setFullName}
-          placeholder="Nome Completo"
+          placeholder={t('editProfile.fullNamePlaceholder')}
         />
 
-        <Text style={styles.label}>Nome de usuário</Text>
+        <Text style={styles.label}>{t('editProfile.username')}</Text>
         <StyledInput
           value={username}
           onChangeText={setUsername}
-          placeholder="Ex: @joao"
+          placeholder={t('editProfile.usernamePlaceholder')}
           autoCapitalize="none"
         />
 
-        <Text style={styles.label}>Sua bio</Text>
+        <Text style={styles.label}>{t('editProfile.bio')}</Text>
         <StyledInput
           value={bio}
           onChangeText={setBio}
-          placeholder="Fale um pouco sobre você..."
+          placeholder={t('editProfile.bioPlaceholder')}
           multiline
           numberOfLines={4}
           style={{ height: 100, textAlignVertical: 'top', paddingTop: 15 }}
         />
 
-        <Text style={styles.photosTitle}>Suas Fotos</Text>
+        <Text style={styles.photosTitle}>{t('editProfile.yourPhotos')}</Text>
         <Text style={styles.photoSubtext}>
-          Arraste para reordenar ou toque para substituir.
+          {t('editProfile.photosSubtext')}
         </Text>
 
         <View style={styles.photosGrid}>

@@ -20,6 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const CARD_GAP = 10;
@@ -63,6 +64,7 @@ const SummaryScreen = () => {
   const [images, setImages] = useState(Array(6).fill(null));
   const [text, setText] = useState('');
   const [selectedHobbies, setSelectedHobbies] = useState<string[]>([]);
+  const { t } = useTranslation();
   
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -83,7 +85,7 @@ const SummaryScreen = () => {
       if (selectedHobbies.length < 3) {
         setSelectedHobbies((prev) => [...prev, hobbyId]);
       } else {
-        Alert.alert('Limite atingido', 'Você só pode escolher 3 hobbies.');
+        Alert.alert(t('summary.limitReached'), t('summary.limitMessage'));
       }
     }
   };
@@ -92,7 +94,7 @@ const SummaryScreen = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        Alert.alert('Erro', 'Usuário não encontrado.');
+        Alert.alert(t('common.error'), t('summary.userNotFound'));
         return;
       }
 
@@ -111,14 +113,14 @@ const SummaryScreen = () => {
         .eq('id', user.id);
 
       if (error) {
-        Alert.alert('Erro', error.message);
+        Alert.alert(t('common.error'), error.message);
         return;
       }
 
       // Navigate back to the main tabs
       navigation.navigate('Tabs' as any);
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar. Tente novamente.');
+      Alert.alert(t('common.error'), t('summary.saveError'));
     }
   };
 
@@ -147,7 +149,7 @@ const SummaryScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: colors.text }]}>Suas fotos</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('summary.yourPhotos')}</Text>
         <View style={styles.gridPhotos}>
           <View style={styles.rowPhotos}>
             {[0, 1, 2].map((index) => (
@@ -165,12 +167,12 @@ const SummaryScreen = () => {
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Bio</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('summary.bio')}</Text>
         <TextInput
           style={[styles.input, dynamicStyles.input]}
           onChangeText={setText}
           value={text}
-          placeholder="Escreva algo sobre você..."
+          placeholder={t('summary.bioPlaceholder')}
           placeholderTextColor={colors.placeholder}
           multiline
         />
@@ -178,13 +180,13 @@ const SummaryScreen = () => {
         <View style={styles.hobbiesContainer}>
           <View style={styles.hobbiesHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
-              Seus Hobbies
+              {t('summary.yourHobbies')}
             </Text>
             <Text style={{ color: selectedHobbies.length === 3 ? colors.primary : colors.secondaryText, fontWeight: '700' }}>
               {selectedHobbies.length}/3
             </Text>
           </View>
-          <Text style={{ color: colors.secondaryText, marginBottom: 15, fontSize: 13 }}>Selecione o que você mais ama fazer.</Text>
+          <Text style={{ color: colors.secondaryText, marginBottom: 15, fontSize: 13 }}>{t('summary.selectHobbies')}</Text>
 
           <View style={styles.hobbiesGrid}>
             {HOBBIES_LIST.map((hobby) => {
@@ -238,7 +240,7 @@ const SummaryScreen = () => {
           disabled={isButtonDisabled}
           style={[styles.finishButton, isButtonDisabled && styles.disabledButton]}
         >
-          <Text style={styles.finishButtonText}>Concluir</Text>
+          <Text style={styles.finishButtonText}>{t('summary.finish')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

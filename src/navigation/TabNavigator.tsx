@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet, Platform, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 import ProfileScreen from '../screens/ProfileScreen';
 import PeopleScreen from '../screens/PeopleScreen';
@@ -11,16 +12,16 @@ import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
-const getTabBarIcon = (route: any, focused: boolean, color: string, size: number) => {
+const getTabBarIcon = (routeName: string, focused: boolean, color: string, size: number) => {
   let iconName: string;
 
-  if (route.name === 'Perfil') {
+  if (routeName === 'Profile') {
     iconName = focused ? 'person' : 'person-outline';
-  } else if (route.name === 'Pessoas') {
+  } else if (routeName === 'People') {
     iconName = focused ? 'heart' : 'heart-outline';
-  } else if (route.name === 'Conversas') {
+  } else if (routeName === 'Chats') {
     iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-  } else if (route.name === 'Ajustes') {
+  } else if (routeName === 'Settings') {
     iconName = focused ? 'settings' : 'settings-outline';
   } else {
     iconName = 'help-outline';
@@ -41,12 +42,13 @@ const styles = StyleSheet.create({
 
 const TabNavigator = () => {
   const { colors, theme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => getTabBarIcon(route, focused, color, size),
+        tabBarIcon: ({ focused, color, size }) => getTabBarIcon(route.name, focused, color, size),
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.placeholder,
         tabBarLabelStyle: {
@@ -68,10 +70,10 @@ const TabNavigator = () => {
         },
       })}
     >
-      <Tab.Screen name="Perfil" component={ProfileScreen} />
-      <Tab.Screen name="Pessoas" component={PeopleScreen} />
-      <Tab.Screen name="Conversas" component={ChatsScreen} />
-      <Tab.Screen name="Ajustes" component={SettingsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: t('tabs.profile') }} />
+      <Tab.Screen name="People" component={PeopleScreen} options={{ tabBarLabel: t('tabs.people') }} />
+      <Tab.Screen name="Chats" component={ChatsScreen} options={{ tabBarLabel: t('tabs.chats') }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarLabel: t('tabs.settings') }} />
     </Tab.Navigator>
   );
 };

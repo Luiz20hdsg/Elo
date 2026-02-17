@@ -2,6 +2,7 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 interface DeleteModalProps {
   visible: boolean;
@@ -11,6 +12,7 @@ interface DeleteModalProps {
 
 const DeleteModal: React.FC<DeleteModalProps> = ({ visible, onClose, onConfirm }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   const styles = StyleSheet.create({
     modalContainer: {
@@ -79,19 +81,19 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ visible, onClose, onConfirm }
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalText}>Tem certeza que deseja deletar sua conta?</Text>
+          <Text style={styles.modalText}>{t('deleteModal.confirmText')}</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, styles.cancelButton]}
               onPress={onClose}
             >
-              <Text style={[styles.buttonText, styles.cancelButtonText]}>Não</Text>
+              <Text style={[styles.buttonText, styles.cancelButtonText]}>{t('deleteModal.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.confirmButton]}
               onPress={onConfirm}
             >
-              <Text style={styles.buttonText}>Sim</Text>
+              <Text style={styles.buttonText}>{t('deleteModal.confirm')}</Text>
             </TouchableOpacity>
           </View>
         </View>

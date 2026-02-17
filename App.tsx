@@ -19,6 +19,8 @@ import SummaryScreen from './src/screens/SummaryScreen';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { supabase } from './src/lib/supabase';
 import { notificationService } from './src/lib/notificationService';
+import { BYPASS_EMAIL, BYPASS_PASSWORD } from 'react-native-dotenv';
+import './src/i18n'; // Initialize i18n
 
 const Stack = createNativeStackNavigator();
 
@@ -107,13 +109,29 @@ function App() {
 
   useEffect(() => {
     // Busca a sessão ativa quando o app inicia
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        // If there's a session on startup, register the device
+    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
+      if (existingSession) {
+        setSession(existingSession);
         notificationService.getAndSaveDeviceToken();
+        setLoading(false);
+      } else if (__DEV__ && BYPASS_EMAIL && BYPASS_PASSWORD) {
+        // Dev bypass: auto-login with .env credentials
+        console.log('[DEV] Bypass login with', BYPASS_EMAIL);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: BYPASS_EMAIL,
+          password: BYPASS_PASSWORD,
+        });
+        if (error) {
+          console.warn('[DEV] Bypass login failed:', error.message);
+        }
+        if (data?.session) {
+          setSession(data.session);
+          notificationService.getAndSaveDeviceToken();
+        }
+        setLoading(false);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     // Ouve mudanças no estado de autenticação (login, logout)

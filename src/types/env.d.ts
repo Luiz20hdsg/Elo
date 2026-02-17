@@ -3,4 +3,6 @@ declare module 'react-native-dotenv' {
   export const SUPABASE_ANON_KEY: string;
   export const ONESIGNAL_APP_ID: string;
   export const GOOGLE_WEB_CLIENT_ID: string;
+  export const BYPASS_EMAIL: string;
+  export const BYPASS_PASSWORD: string;
 }

@@ -23,6 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
 import Geolocation from 'react-native-geolocation-service';
 import { PermissionsAndroid, Platform as RNPlatform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,6 +48,7 @@ type RecommendedProfile = {
 const PeopleScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<PeopleScreenNavigationProp>();
+  const { t } = useTranslation();
 
   const [recommendations, setRecommendations] = useState<RecommendedProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,7 +192,7 @@ const PeopleScreen = () => {
     }
 
     if (isMatch) {
-      Alert.alert("É um Match!", `Você e ${currentProfile.full_name || currentProfile.username} se curtiram!`);
+      Alert.alert(t('people.itsAMatch'), t('people.matchMessage', { name: currentProfile.full_name || currentProfile.username }));
       // Aqui você pode navegar para a tela de chat ou mostrar uma animação de match
     }
   };
@@ -284,7 +286,7 @@ const PeopleScreen = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={{ color: colors.text, marginTop: 10 }}>Buscando pessoas...</Text>
+          <Text style={{ color: colors.text, marginTop: 10 }}>{t('people.searching')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -295,7 +297,7 @@ const PeopleScreen = () => {
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Descobrir</Text>
+        <Text style={styles.headerTitle}>{t('people.title')}</Text>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <TouchableOpacity onPress={() => setFilterVisible(true)} style={{ padding: 10 }}>
              <Ionicons name="options-outline" size={22} color={colors.secondaryText} />
@@ -328,15 +330,15 @@ const PeopleScreen = () => {
                     <View style={styles.locationRow}>
                         <Ionicons name="location-outline" size={16} color={colors.placeholder} />
                         {/* Adicionar distância se disponível */}
-                        <Text style={styles.locationText}>A alguns km de você</Text>
+                        <Text style={styles.locationText}>{t('people.nearYou')}</Text>
                     </View>
 
-                    <Text style={styles.sectionTitle}>Sobre mim</Text>
-                    <Text style={styles.bioText}>{currentProfile.bio || 'Nenhuma bio ainda.'}</Text>
+                    <Text style={styles.sectionTitle}>{t('people.aboutMe')}</Text>
+                    <Text style={styles.bioText}>{currentProfile.bio || t('people.noBio')}</Text>
 
                     {currentProfile.interests && currentProfile.interests.length > 0 && (
                       <>
-                        <Text style={styles.sectionTitle}>Interesses</Text>
+                        <Text style={styles.sectionTitle}>{t('people.interests')}</Text>
                         <View style={styles.hobbiesContainer}>
                             {currentProfile.interests.map((hobby, index) => (
                                 <View key={index} style={styles.hobbyChip}><Text style={styles.hobbyText}>{hobby}</Text></View>
@@ -355,16 +357,16 @@ const PeopleScreen = () => {
                 }}>
                     <Ionicons name="heart-dislike-outline" size={44} color={colors.secondaryText} />
                 </View>
-                <Text style={[styles.headerTitle, {textAlign: 'center'}]}>Ninguém por aqui</Text>
+                <Text style={[styles.headerTitle, {textAlign: 'center'}]}>{t('people.noOneHere')}</Text>
                 <Text style={{color: colors.secondaryText, textAlign: 'center', marginTop: 10, fontSize: 14, lineHeight: 22}}>
-                    Volte mais tarde para ver{'\n'}novas pessoas na sua região.
+                    {t('people.comeBackLater')}
                 </Text>
                 <TouchableOpacity onPress={fetchRecommendations} style={{
                   marginTop: 28, paddingVertical: 12, paddingHorizontal: 28,
                   backgroundColor: colors.primary, borderRadius: 24,
                   shadowColor: colors.primary, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4,
                 }}>
-                    <Text style={{color: '#FFF', fontWeight: '700', fontSize: 15}}>Buscar Novamente</Text>
+                    <Text style={{color: '#FFF', fontWeight: '700', fontSize: 15}}>{t('people.searchAgain')}</Text>
                 </TouchableOpacity>
             </View>
         )}
@@ -393,7 +395,7 @@ const PeopleScreen = () => {
         <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
                 <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Filtros</Text>
+                    <Text style={styles.modalTitle}>{t('people.filters')}</Text>
                     <TouchableOpacity onPress={() => setFilterVisible(false)}>
                         <Ionicons name="close" size={24} color={colors.text} />
                     </TouchableOpacity>
@@ -402,10 +404,10 @@ const PeopleScreen = () => {
                 <ScrollView showsVerticalScrollIndicator={false}>
                     
                     <View style={styles.filterSection}>
-                        <Text style={styles.filterLabel}>Idade</Text>
+                        <Text style={styles.filterLabel}>{t('people.age')}</Text>
                         <View style={styles.rowInputs}>
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabelSmall}>De</Text>
+                                <Text style={styles.inputLabelSmall}>{t('people.from')}</Text>
                                 <TextInput 
                                     style={styles.inputBox} 
                                     keyboardType="numeric" 
@@ -414,7 +416,7 @@ const PeopleScreen = () => {
                                 />
                             </View>
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabelSmall}>Até</Text>
+                                <Text style={styles.inputLabelSmall}>{t('people.to')}</Text>
                                 <TextInput 
                                     style={styles.inputBox} 
                                     keyboardType="numeric" 
@@ -426,7 +428,7 @@ const PeopleScreen = () => {
                     </View>
 
                     <View style={styles.filterSection}>
-                        <Text style={styles.filterLabel}>Distância (km)</Text>
+                        <Text style={styles.filterLabel}>{t('people.distance')}</Text>
                         <TextInput 
                             style={styles.inputBox} 
                             keyboardType="numeric" 
@@ -436,7 +438,7 @@ const PeopleScreen = () => {
                     </View>
 
                     <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
-                        <Text style={styles.applyButtonText}>Aplicar Filtros</Text>
+                        <Text style={styles.applyButtonText}>{t('people.applyFilters')}</Text>
                     </TouchableOpacity>
 
                 </ScrollView>

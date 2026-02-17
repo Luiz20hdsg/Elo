@@ -10,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 // Define the navigation props for the stack
 type RootStackParamList = {
@@ -26,6 +27,7 @@ type InitialScreenNavigationProp = NativeStackNavigationProp<
 const InitialScreen = () => {
   const navigation = useNavigation<InitialScreenNavigationProp>();
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <ImageBackground
@@ -39,7 +41,7 @@ const InitialScreen = () => {
       <View style={styles.content}>
         <View style={styles.topSection}>
           <Text style={styles.logo}>elo</Text>
-          <Text style={styles.tagline}>Conecte-se com quem{'\n'}realmente importa</Text>
+          <Text style={styles.tagline}>{t('initial.tagline')}</Text>
         </View>
 
         <View style={styles.buttonContainer}>
@@ -47,18 +49,18 @@ const InitialScreen = () => {
             style={[styles.button, { backgroundColor: colors.primary }]}
             onPress={() => navigation.navigate('Login')}
             activeOpacity={0.85}>
-            <Text style={styles.buttonText}>Começar</Text>
+            <Text style={styles.buttonText}>{t('initial.start')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.outlineButton}
             onPress={() => navigation.navigate('Login')}
             activeOpacity={0.85}>
-            <Text style={styles.outlineButtonText}>Já tenho uma conta</Text>
+            <Text style={styles.outlineButtonText}>{t('initial.haveAccount')}</Text>
           </TouchableOpacity>
 
           <Text style={styles.disclaimer}>
-            Ao continuar, você concorda com nossos{'\n'}Termos de Uso e Política de Privacidade
+            {t('initial.disclaimer')}
           </Text>
         </View>
       </View>

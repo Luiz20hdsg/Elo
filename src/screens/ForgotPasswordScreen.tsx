@@ -14,6 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import StyledButton from '../components/StyledButton';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 type RootStackParamList = {
   Login: undefined;
@@ -29,10 +30,11 @@ const ForgotPasswordScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const handlePasswordReset = async () => {
     if (!email) {
-      Alert.alert('Erro', 'Por favor, digite seu email.');
+      Alert.alert(t('common.error'), t('forgotPassword.errorFillEmail'));
       return;
     }
 
@@ -42,11 +44,11 @@ const ForgotPasswordScreen = () => {
     });
 
     if (error) {
-      Alert.alert('Erro', error.message);
+      Alert.alert(t('common.error'), error.message);
     } else {
       Alert.alert(
-        'Sucesso',
-        'Um email com instruções para redefinir sua senha foi enviado.'
+        t('common.success'),
+        t('forgotPassword.successMessage')
       );
     }
     setLoading(false);
@@ -116,13 +118,13 @@ const ForgotPasswordScreen = () => {
       </View>
 
       <View style={styles.container}>
-        <Text style={styles.title}>Redefinir Senha</Text>
+        <Text style={styles.title}>{t('forgotPassword.title')}</Text>
         <Text style={styles.subtitle}>
-          Enviaremos um link para o seu email para você poder criar uma nova senha.
+          {t('forgotPassword.subtitle')}
         </Text>
         <TextInput
           style={styles.input}
-          placeholder="seuemail@exemplo.com"
+          placeholder={t('forgotPassword.emailPlaceholder')}
           placeholderTextColor={colors.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -130,7 +132,7 @@ const ForgotPasswordScreen = () => {
           onChangeText={setEmail}
         />
         <StyledButton 
-          title={loading ? 'Enviando...' : 'Enviar Link'} 
+          title={loading ? t('forgotPassword.sending') : t('forgotPassword.send')} 
           onPress={handlePasswordReset} 
           disabled={loading}
         />

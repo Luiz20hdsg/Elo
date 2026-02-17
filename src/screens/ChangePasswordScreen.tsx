@@ -14,6 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import StyledButton from '../components/StyledButton';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 type RootStackParamList = {
   Login: undefined;
@@ -33,6 +34,7 @@ const ChangePasswordScreen = () => {
   const [isCurrentPasswordVisible, setIsCurrentPasswordVisible] = useState(false);
   const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
   const [isConfirmNewPasswordVisible, setIsConfirmNewPasswordVisible] = useState(false);
+  const { t } = useTranslation();
 
 
   const styles = StyleSheet.create({
@@ -101,11 +103,11 @@ const ChangePasswordScreen = () => {
       </View>
 
       <View style={styles.container}>
-        <Text style={styles.title}>Alterar Senha</Text>
+        <Text style={styles.title}>{t('changePassword.title')}</Text>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Senha Atual"
+            placeholder={t('changePassword.currentPassword')}
             placeholderTextColor={colors.placeholder}
             secureTextEntry={!isCurrentPasswordVisible}
             value={currentPassword}
@@ -118,7 +120,7 @@ const ChangePasswordScreen = () => {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Nova Senha"
+            placeholder={t('changePassword.newPassword')}
             placeholderTextColor={colors.placeholder}
             secureTextEntry={!isNewPasswordVisible}
             value={newPassword}
@@ -131,7 +133,7 @@ const ChangePasswordScreen = () => {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Confirmar Nova Senha"
+            placeholder={t('changePassword.confirmNewPassword')}
             placeholderTextColor={colors.placeholder}
             secureTextEntry={!isConfirmNewPasswordVisible}
             value={confirmNewPassword}
@@ -141,25 +143,25 @@ const ChangePasswordScreen = () => {
             <Ionicons name={isConfirmNewPasswordVisible ? 'eye-off' : 'eye'} size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
-        <StyledButton title="Salvar Alterações" onPress={async () => {
+        <StyledButton title={t('changePassword.change')} onPress={async () => {
           if (!newPassword || !confirmNewPassword) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+            Alert.alert(t('common.error'), t('changePassword.fillAllFields'));
             return;
           }
           if (newPassword !== confirmNewPassword) {
-            Alert.alert('Erro', 'As senhas não coincidem.');
+            Alert.alert(t('common.error'), t('changePassword.passwordsDoNotMatch'));
             return;
           }
           if (newPassword.length < 6) {
-            Alert.alert('Erro', 'A nova senha deve ter pelo menos 6 caracteres.');
+            Alert.alert(t('common.error'), t('changePassword.minLength'));
             return;
           }
           const { error } = await supabase.auth.updateUser({ password: newPassword });
           if (error) {
-            Alert.alert('Erro', error.message);
+            Alert.alert(t('common.error'), error.message);
           } else {
-            Alert.alert('Sucesso', 'Senha alterada com sucesso!', [
-              { text: 'OK', onPress: () => navigation.goBack() }
+            Alert.alert(t('common.success'), t('changePassword.passwordChanged'), [
+              { text: t('common.ok'), onPress: () => navigation.goBack() }
             ]);
           }
         }} />

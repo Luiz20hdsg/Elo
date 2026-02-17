@@ -16,6 +16,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
@@ -45,6 +46,7 @@ type Match = {
 const ChatsScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<ChatsScreenNavigationProp>();
+  const { t } = useTranslation();
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,7 +281,7 @@ const ChatsScreen = () => {
       
       {/* HEADER */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Conversas</Text>
+        <Text style={styles.headerTitle}>{t('chats.title')}</Text>
         <View style={{flexDirection: 'row'}}>
           <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
             <Ionicons
@@ -295,7 +297,7 @@ const ChatsScreen = () => {
         
         {/* MATCHES */}
         <View style={styles.matchesSection}>
-            <Text style={styles.sectionTitle}>Seus Matches</Text>
+            <Text style={styles.sectionTitle}>{t('chats.yourMatches')}</Text>
             {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator color={colors.primary} />
@@ -328,13 +330,13 @@ const ChatsScreen = () => {
 
         {/* CHATS LIST - use real matches as chat conversations */}
         <View style={styles.chatList}>
-            <Text style={[styles.sectionTitle, {marginTop: 20}]}>Mensagens</Text>
+            <Text style={[styles.sectionTitle, {marginTop: 20}]}>{t('chats.messages')}</Text>
             
             {matches.length === 0 && !loading ? (
               <View style={{ alignItems: 'center', paddingVertical: 40 }}>
                 <Ionicons name="chatbubbles-outline" size={44} color={colors.secondaryText} />
                 <Text style={{ color: colors.secondaryText, marginTop: 12, fontSize: 14, fontWeight: '500' }}>
-                  Nenhuma conversa ainda. Dê like em alguém!
+                  {t('chats.noConversations')}
                 </Text>
               </View>
             ) : (
@@ -344,7 +346,7 @@ const ChatsScreen = () => {
                     style={styles.chatItem}
                     onPress={() => handleChatPress({
                       id: match.other_user_id,
-                      name: match.other_user_full_name || 'Usuário',
+                      name: match.other_user_full_name || t('profile.user'),
                       photo: match.other_user_avatar_url
                     })}
                     activeOpacity={0.7}
@@ -353,7 +355,7 @@ const ChatsScreen = () => {
                     
                     <View style={styles.chatContent}>
                         <View style={styles.chatHeader}>
-                            <Text style={styles.chatName}>{match.other_user_full_name || 'Usuário'}</Text>
+                            <Text style={styles.chatName}>{match.other_user_full_name || t('profile.user')}</Text>
                         </View>
                         
                         <View style={styles.chatFooter}>
@@ -361,7 +363,7 @@ const ChatsScreen = () => {
                                 numberOfLines={1} 
                                 style={styles.lastMessage}
                             >
-                              Toque para conversar
+                              {t('chats.tapToChat')}
                             </Text>
                         </View>
                     </View>

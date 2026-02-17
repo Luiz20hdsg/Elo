@@ -22,6 +22,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from 'react-native-dotenv';
+import { useTranslation } from 'react-i18next';
 
 // Configure Google Sign-In
 GoogleSignin.configure({
@@ -45,6 +46,7 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
 const LoginScreen = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { colors, theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,7 +54,7 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Erro', 'Por favor, preencha email e senha.');
+      Alert.alert(t('common.error'), t('login.errorFillFields'));
       return;
     }
 
@@ -63,7 +65,7 @@ const LoginScreen = () => {
     });
 
     if (error) {
-      Alert.alert('Erro no login', error.message);
+      Alert.alert(t('login.loginError'), error.message);
     }
     setLoading(false);
   };
@@ -89,7 +91,7 @@ const LoginScreen = () => {
     } catch (error: any) {
       if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         console.error(error);
-        Alert.alert('Erro no login com Google', 'Ocorreu um erro inesperado.');
+        Alert.alert(t('login.googleLoginError'), t('login.unexpectedError'));
       }
     } finally {
       setLoading(false);
@@ -134,25 +136,25 @@ const LoginScreen = () => {
 
       <View style={styles.container}>
         <Text style={styles.logo}>elo</Text>
-        <Text style={styles.title}>Bem-vindo!</Text>
-        <Text style={styles.subtitle}>Ache seu caminho.{'\n'}Encontre seu propósito.</Text>
+        <Text style={styles.title}>{t('login.welcome')}</Text>
+        <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
 
-        <StyledInput icon="person-outline" placeholder="Email" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-        <StyledInput icon="lock-closed-outline" placeholder="Senha" isPassword={true} value={password} onChangeText={setPassword} />
+        <StyledInput icon="person-outline" placeholder={t('login.emailPlaceholder')} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+        <StyledInput icon="lock-closed-outline" placeholder={t('login.passwordPlaceholder')} isPassword={true} value={password} onChangeText={setPassword} />
 
         <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-          <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
+          <Text style={styles.forgotPassword}>{t('login.forgotPassword')}</Text>
         </TouchableOpacity>
 
         <View style={styles.buttonContainer}>
-          <StyledButton title={loading ? 'Entrando...' : 'Entrar'} onPress={handleLogin} disabled={loading} />
-          <StyledButton title="Criar Conta" type="outline" onPress={() => navigation.navigate('RegisterScreen')} />
+          <StyledButton title={loading ? t('login.loggingIn') : t('login.login')} onPress={handleLogin} disabled={loading} />
+          <StyledButton title={t('login.createAccount')} type="outline" onPress={() => navigation.navigate('RegisterScreen')} />
         </View>
 
         <View style={styles.socialSection}>
           <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou continue com</Text>
+            <Text style={styles.dividerText}>{t('login.orContinueWith')}</Text>
             <View style={styles.dividerLine} />
           </View>
 

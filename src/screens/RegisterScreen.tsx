@@ -26,6 +26,7 @@ import {
   AppleButton,
 } from '@invertase/react-native-apple-authentication';
 import { GOOGLE_WEB_CLIENT_ID } from 'react-native-dotenv';
+import { useTranslation } from 'react-i18next';
 
 // Configure Google Sign-In
 GoogleSignin.configure({
@@ -47,6 +48,7 @@ type RegisterScreenNavigationProp = NativeStackNavigationProp<
 const RegisterScreen = () => {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
   const { colors, theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,12 +58,12 @@ const RegisterScreen = () => {
 
   const handleSignUp = async () => {
     if (!email || !password || !username || !birthDate) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      Alert.alert(t('common.error'), t('register.errorFillFields'));
       return;
     }
     const dateParts = birthDate.split('/');
     if (dateParts.length !== 3 || dateParts[2].length !== 4 || dateParts[1].length !== 2 || dateParts[0].length !== 2) {
-      Alert.alert('Data inválida', 'Por favor, use o formato DD/MM/AAAA para a data de nascimento.');
+      Alert.alert(t('register.invalidDate'), t('register.invalidDateMessage'));
       return;
     }
     const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
@@ -73,7 +75,7 @@ const RegisterScreen = () => {
     });
 
     if (error) {
-      Alert.alert('Erro no cadastro', error.message);
+      Alert.alert(t('register.registerError'), error.message);
       setLoading(false);
       return;
     }
@@ -88,12 +90,12 @@ const RegisterScreen = () => {
         .eq('id', user.id);
 
       if (profileError) {
-        Alert.alert('Erro ao criar perfil', profileError.message);
+        Alert.alert(t('register.profileError'), profileError.message);
       } else {
         Alert.alert(
-          'Cadastro realizado!',
-          'Um email de confirmação foi enviado. Por favor, verifique sua caixa de entrada.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+          t('register.registerSuccess'),
+          t('register.registerSuccessMessage'),
+          [{ text: t('common.ok'), onPress: () => navigation.navigate('Login') }]
         );
       }
     }
@@ -112,7 +114,7 @@ const RegisterScreen = () => {
     } catch (error: any) {
       if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         console.error(error);
-        Alert.alert('Erro no cadastro com Google', 'Ocorreu um erro inesperado.');
+        Alert.alert(t('register.googleRegisterError'), t('register.unexpectedError'));
       }
     } finally {
       setLoading(false);
@@ -133,7 +135,7 @@ const RegisterScreen = () => {
     } catch (error: any) {
       if (error.code !== appleAuth.Error.CANCELED) {
         console.error(error);
-        Alert.alert('Erro no login com Apple', 'Ocorreu um erro inesperado.');
+        Alert.alert(t('register.appleLoginError'), t('register.unexpectedError'));
       }
     } finally {
       setLoading(false);
@@ -175,22 +177,22 @@ const RegisterScreen = () => {
       </View>
       <View style={styles.container}>
         <Text style={styles.logo}>elo</Text>
-        <Text style={styles.subtitle}>Crie sua conta.</Text>
-        <Text style={styles.title}>Cadastro</Text>
+        <Text style={styles.subtitle}>{t('register.subtitle')}</Text>
+        <Text style={styles.title}>{t('register.title')}</Text>
 
-        <StyledInput icon="person-outline" placeholder="Nome de usuário" autoCapitalize="none" value={username} onChangeText={setUsername} />
-        <StyledInput icon="mail-outline" placeholder="Email" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-        <StyledInput icon="calendar-outline" placeholder="Data de nascimento (DD/MM/AAAA)" autoCapitalize="none" value={birthDate} onChangeText={setBirthDate} maxLength={10} keyboardType="numeric" />
-        <StyledInput icon="lock-closed-outline" placeholder="Senha" isPassword={true} value={password} onChangeText={setPassword} />
+        <StyledInput icon="person-outline" placeholder={t('register.usernamePlaceholder')} autoCapitalize="none" value={username} onChangeText={setUsername} />
+        <StyledInput icon="mail-outline" placeholder={t('register.emailPlaceholder')} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+        <StyledInput icon="calendar-outline" placeholder={t('register.birthDatePlaceholder')} autoCapitalize="none" value={birthDate} onChangeText={setBirthDate} maxLength={10} keyboardType="numeric" />
+        <StyledInput icon="lock-closed-outline" placeholder={t('register.passwordPlaceholder')} isPassword={true} value={password} onChangeText={setPassword} />
 
         <View style={styles.buttonContainer}>
-          <StyledButton title={loading ? 'Cadastrando...' : 'Cadastrar'} onPress={handleSignUp} disabled={loading} />
+          <StyledButton title={loading ? t('register.registering') : t('register.register')} onPress={handleSignUp} disabled={loading} />
         </View>
 
         <View style={styles.socialSection}>
           <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
+            <Text style={styles.dividerText}>{t('register.or')}</Text>
             <View style={styles.dividerLine} />
           </View>
           <View style={styles.socialButtonsContainer}>

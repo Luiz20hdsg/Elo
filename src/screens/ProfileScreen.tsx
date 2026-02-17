@@ -18,6 +18,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 type RootStackParamList = {
   Initial: undefined;
@@ -33,11 +34,12 @@ const BANNER_WIDTH = width - 40;
 const ProfileScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      Alert.alert('Erro', 'Não foi possível fazer o logout.');
+      Alert.alert(t('common.error'), t('profile.logoutError'));
     }
     // O listener em App.tsx cuidará da navegação
   };
@@ -75,7 +77,7 @@ const ProfileScreen = () => {
       }
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert('Erro', 'Não foi possível carregar o perfil.');
+        Alert.alert(t('common.error'), t('profile.loadError'));
         console.error(error.message);
       }
     } finally {
@@ -99,13 +101,13 @@ const ProfileScreen = () => {
   const BANNER_SLIDES = [
     {
       id: 'plus',
-      title: 'PREMIUM+',
-      desc: 'Receba tratamento VIP e venha se conectar com pessoas incríveis da melhor forma.',
+      title: t('profile.premiumPlus'),
+      desc: t('profile.premiumPlusDesc'),
     },
     {
       id: 'standard',
-      title: 'LIGHT',
-      desc: 'Desbloqueie recursos essenciais para encontrar seu par ideal mais rápido.',
+      title: t('profile.light'),
+      desc: t('profile.lightDesc'),
     }
   ];
 
@@ -137,26 +139,26 @@ const ProfileScreen = () => {
 
   const featuresData = {
     plus: [
-      { text: 'Ganhe destaque máximo no feed', included: true },
-      { text: 'Potencialize suas curtidas', included: true },
-      { text: 'Envie curtidas e comentários ilimitados', included: true },
-      { text: 'Ver quem te curtiu', included: true },
-      { text: '5 SUper Likes por dia', included: true },
-      { text: 'Filtro completo (religião, altura, idade...)', included: true },
+      { text: t('profile.maxVisibility'), included: true },
+      { text: t('profile.boostLikes'), included: true },
+      { text: t('profile.unlimitedLikesComments'), included: true },
+      { text: t('profile.seeWhoLiked'), included: true },
+      { text: t('profile.superLikesPerDay'), included: true },
+      { text: t('profile.fullFilter'), included: true },
     ],
     standard: [
-      { text: 'Ganhe destaque no feed', included: true },
-      { text: 'Curtidas ilimitadas', included: true },
-      { text: '3 SUper Likes por dia', included: true },
-      { text: 'Potencialize suas curtidas', included: false },
-      { text: 'Ver quem te curtiu', included: false },
+      { text: t('profile.feedVisibility'), included: true },
+      { text: t('profile.unlimitedLikes'), included: true },
+      { text: t('profile.threeSuperLikes'), included: true },
+      { text: t('profile.boostLikes'), included: false },
+      { text: t('profile.seeWhoLiked'), included: false },
     ],
     free: [
-      { text: 'Curtidas limitadas por dia', included: true },
-      { text: '1 Super Like por dia', included: true },
-      { text: 'Ganhe destaque no feed', included: false },
-      { text: 'Potencialize suas curtidas', included: false },
-      { text: 'Perfil básico de tempo', included: false },
+      { text: t('profile.limitedLikes'), included: true },
+      { text: t('profile.oneSuperLike'), included: true },
+      { text: t('profile.feedVisibility'), included: false },
+      { text: t('profile.boostLikes'), included: false },
+      { text: t('profile.basicProfile'), included: false },
     ],
   };
 
@@ -450,7 +452,7 @@ const ProfileScreen = () => {
         backgroundColor={colors.background}
       />
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingHorizontal: 24 }}>
-        <Text style={{ fontSize: 26, fontWeight: '800', color: colors.text }}>Meu Perfil</Text>
+        <Text style={{ fontSize: 26, fontWeight: '800', color: colors.text }}>{t('profile.title')}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
             <Ionicons
@@ -482,11 +484,11 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.userName}>
-              {profile?.full_name || 'Usuário'}
+              {profile?.full_name || t('profile.user')}
               {profile?.age && `, ${profile.age}`}
             </Text>
             <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditProfileScreen' as any)}>
-              <Text style={styles.editButtonText}>Completar perfil</Text>
+              <Text style={styles.editButtonText}>{t('profile.completeProfile')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -507,7 +509,7 @@ const ProfileScreen = () => {
                 activeChip === 'advice' && styles.chipTextActive,
               ]}
             >
-              Planos
+              {t('profile.plans')}
               {activeChip === 'advice' && <Text style={styles.dot}> •</Text>}
             </Text>
           </TouchableOpacity>
@@ -525,7 +527,7 @@ const ProfileScreen = () => {
                 activeChip === 'photos' && styles.chipTextActive,
               ]}
             >
-              Melhore suas fotos
+              {t('profile.improvePhotos')}
               {activeChip === 'photos' && <Text style={styles.dot}> •</Text>}
             </Text>
           </TouchableOpacity>
@@ -536,8 +538,8 @@ const ProfileScreen = () => {
             <View style={styles.iconCircle}>
               <Ionicons name="star" size={20} color="#FFF" />
             </View>
-            <Text style={styles.actionTitle}>Spotlight</Text>
-            <Text style={styles.actionSubtitle}>Ganhe destaque</Text>
+            <Text style={styles.actionTitle}>{t('profile.spotlight')}</Text>
+            <Text style={styles.actionSubtitle}>{t('profile.gainVisibility')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionCard}>
@@ -545,8 +547,8 @@ const ProfileScreen = () => {
               {/* --- MUDANÇA AQUI: Ícone e Texto alterados --- */}
               <Ionicons name="heart" size={20} color="#FFF" />
             </View>
-            <Text style={styles.actionTitle}>Super Like</Text>
-            <Text style={styles.actionSubtitle}>Chame atenção</Text>
+            <Text style={styles.actionTitle}>{t('profile.superLike')}</Text>
+            <Text style={styles.actionSubtitle}>{t('profile.getAttention')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -574,7 +576,7 @@ const ProfileScreen = () => {
                             onPress={() => setSelectedTab(slide.id as any)}
                         >
                             <Text style={styles.premiumButtonText}>
-                                Explorar {slide.title}
+                                {t('profile.explore')} {slide.title}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -596,7 +598,7 @@ const ProfileScreen = () => {
 
         <View style={styles.advantagesSection}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Suas vantagens:</Text>
+            <Text style={styles.sectionTitle}>{t('profile.yourAdvantages')}</Text>
 
             <View style={styles.toggleRow}>
               <TouchableOpacity

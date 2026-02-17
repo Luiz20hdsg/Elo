@@ -18,6 +18,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
+import { useTranslation } from 'react-i18next';
 
 // --- Types ---
 type RootStackParamList = {
@@ -38,6 +39,7 @@ const ChatDetailScreen = () => {
   const { colors, theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<ChatDetailRouteProp>();
+  const { t } = useTranslation();
   
   const { userId: otherUserId, userName, userPhoto } = route.params;
 
@@ -327,7 +329,7 @@ const ChatDetailScreen = () => {
             <Image source={{ uri: userPhoto }} style={styles.avatar} />
             <View style={styles.headerTextContainer}>
                 <Text style={styles.name}>{userName}</Text>
-                <Text style={styles.status}>Online</Text>
+                <Text style={styles.status}>{t('chatDetail.online')}</Text>
             </View>
         </View>
 
@@ -362,7 +364,7 @@ const ChatDetailScreen = () => {
             
             <TextInput
                 style={styles.inputField}
-                placeholder="Mensagem..."
+                placeholder={t('chatDetail.typePlaceholder')}
                 placeholderTextColor={colors.placeholder}
                 value={inputText}
                 onChangeText={setInputText}

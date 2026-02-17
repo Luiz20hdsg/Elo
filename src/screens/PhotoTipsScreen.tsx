@@ -12,6 +12,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext'; // Ajuste o caminho conforme sua estrutura
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const GAP = 15;
@@ -22,43 +23,44 @@ const CARD_WIDTH = (width - (PADDING * 2) - GAP) / 2;
 const PhotoTipsScreen = () => {
   const { colors, theme } = useTheme();
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   // Dados das 6 dicas
   const photoTips = [
     {
       id: 1,
-      title: 'Foto de rosto',
-      desc: 'Uma foto clara do seu rosto, sorrindo e sem óculos escuros.',
+      title: t('photoTips.facePhoto'),
+      desc: t('photoTips.facePhotoDesc'),
       icon: 'person-circle-outline',
     },
     {
       id: 2,
-      title: 'Corpo inteiro',
-      desc: 'Mostre seu estilo e altura. Idealmente em pé e visível.',
+      title: t('photoTips.fullBody'),
+      desc: t('photoTips.fullBodyDesc'),
       icon: 'body-outline',
     },
     {
       id: 3,
-      title: 'Com os amigos',
-      desc: 'Mostre que você é sociável.',
+      title: t('photoTips.withFriends'),
+      desc: t('photoTips.withFriendsDesc'),
       icon: 'people-outline',
     },
     {
       id: 4,
-      title: 'Hobby ou Paixão',
-      desc: 'Tocando, lendo, cozinhando... Mostre o que você ama fazer.',
+      title: t('photoTips.hobbyOrPassion'),
+      desc: t('photoTips.hobbyOrPassionDesc'),
       icon: 'musical-notes-outline',
     },
     {
       id: 5,
-      title: 'Viagem / Aventura',
-      desc: 'Uma foto em um lugar interessante que você visitou.',
+      title: t('photoTips.travel'),
+      desc: t('photoTips.travelDesc'),
       icon: 'airplane-outline',
     },
     {
       id: 6,
-      title: 'Espontânea',
-      desc: 'Uma foto descontraída, rindo ou brincando com um pet.',
+      title: t('photoTips.spontaneous'),
+      desc: t('photoTips.spontaneousDesc'),
       icon: 'camera-outline',
     },
   ];
@@ -144,15 +146,15 @@ const PhotoTipsScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={28} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Guia de Fotos</Text>
+        <Text style={styles.headerTitle}>{t('photoTips.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.headerTitle, { marginLeft: 0, fontSize: 24, marginBottom: 10 }]}>
-          Fotos que funcionam
+          {t('photoTips.header')}
         </Text>
         <Text style={styles.subtitle}>
-          Adicione variedade ao seu perfil para aumentar suas chances de match. Aqui estão 6 tipos essenciais:
+          {t('photoTips.subtitle')}
         </Text>
 
         <View style={styles.gridContainer}>
@@ -183,7 +185,7 @@ const PhotoTipsScreen = () => {
           }}
           onPress={() => navigation.goBack()}
         >
-          <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15, letterSpacing: 0.5 }}>Entendi</Text>
+          <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15, letterSpacing: 0.5 }}>{t('photoTips.understood')}</Text>
         </TouchableOpacity>
 
       </ScrollView>

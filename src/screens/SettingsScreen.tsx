@@ -18,6 +18,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
+import { changeLanguage, LANGUAGES } from '../i18n';
 
 type RootStackParamList = {
   Initial: undefined;
@@ -51,17 +53,19 @@ const { width } = Dimensions.get('window');
 const SettingsScreen = () => {
   const { colors, theme, toggleTheme } = useTheme();
   const navigation = useNavigation<SettingsScreenNavigationProp>();
+  const { t, i18n } = useTranslation();
   
   const [msgNotifications, setMsgNotifications] = useState(true);
   const [matchNotifications, setMatchNotifications] = useState(true);
   
   // --- Estado para controlar a visibilidade da Modal ---
   const [modalVisible, setModalVisible] = useState(false);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      Alert.alert('Erro', 'Não foi possível fazer o logout.');
+      Alert.alert(t('common.error'), t('settings.logoutError'));
     }
     // O listener em App.tsx cuidará da navegação
   };
@@ -73,7 +77,7 @@ const SettingsScreen = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        Alert.alert('Erro', 'Usuário não encontrado.');
+        Alert.alert(t('common.error'), t('settings.userNotFound'));
         return;
       }
 
@@ -93,12 +97,12 @@ const SettingsScreen = () => {
       // Show confirmation
       setTimeout(() => {
         Alert.alert(
-          "Conta Deletada",
-          "Sua conta foi excluída com sucesso. Esperamos te ver de novo!",
+          t('settings.accountDeleted'),
+          t('settings.accountDeletedMessage'),
         );
       }, 300);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível deletar a conta. Tente novamente.');
+      Alert.alert(t('common.error'), t('settings.deleteError'));
     }
   };
 
@@ -252,7 +256,7 @@ const SettingsScreen = () => {
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Ajustes</Text>
+        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
         <View style={{flexDirection: 'row'}}>
           <TouchableOpacity onPress={toggleTheme} style={{ padding: 10 }}>
             <Ionicons
@@ -265,30 +269,30 @@ const SettingsScreen = () => {
       </View>
 
       <ScrollView style={styles.container}>
-        <Section title="Conta">
+        <Section title={t('settings.account')}>
           <SettingRow 
-            text="Editar Perfil" 
+            text={t('settings.editProfile')} 
             icon="account-edit-outline"
             rightContent={<Icon name="chevron-right" size={24} color={colors.text} />}
             onPress={() => navigation.navigate('EditProfileScreen' as any)}
           />
           <SettingRow 
-            text="Alterar Senha" 
+            text={t('settings.changePassword')} 
             icon="lock-reset"
             onPress={() => navigation.navigate('ChangePassword')}
             rightContent={<Icon name="chevron-right" size={24} color={colors.text} />}
           />
           <SettingRow 
-            text="Esqueci minha senha" 
+            text={t('settings.forgotPassword')} 
             icon="lock-question"
             onPress={() => navigation.navigate('ForgotPassword')}
             rightContent={<Icon name="chevron-right" size={24} color={colors.text} />}
           />
         </Section>
         
-        <Section title="Notificações">
+        <Section title={t('settings.notifications')}>
           <SettingRow 
-            text="Novas Mensagens"
+            text={t('settings.newMessages')}
             icon="email-outline"
             rightContent={
               <Switch
@@ -300,7 +304,7 @@ const SettingsScreen = () => {
             }
           />
            <SettingRow 
-            text="Notificar Match"
+            text={t('settings.notifyMatch')}
             icon="information-outline"
             rightContent={
               <Switch
@@ -312,6 +316,22 @@ const SettingsScreen = () => {
             }
           />
         </Section>
+
+        <Section title={t('settings.language')}>
+          <SettingRow 
+            text={t('settings.selectLanguage')}
+            icon="translate"
+            rightContent={
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ color: colors.secondaryText, marginRight: 8, fontSize: 14 }}>
+                  {LANGUAGES.find(l => l.code === i18n.language)?.flag} {LANGUAGES.find(l => l.code === i18n.language)?.label}
+                </Text>
+                <Icon name="chevron-right" size={24} color={colors.text} />
+              </View>
+            }
+            onPress={() => setLanguageModalVisible(true)}
+          />
+        </Section>
         
         <View style={{ marginVertical: 20, paddingHorizontal: 24 }}>
             <TouchableOpacity 
@@ -319,21 +339,20 @@ const SettingsScreen = () => {
               onPress={handleLogout}
             >
                 <Icon name="logout" size={20} color={colors.text} style={{ marginRight: 8 }} />
-                <Text style={{...styles.rowText, fontWeight: '700'}}>Sair da Conta</Text>
+                <Text style={{...styles.rowText, fontWeight: '700'}}>{t('settings.logout')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.row, {justifyContent: 'center', borderBottomWidth: 0}]}
-              // --- Ao clicar, abre a modal ---
               onPress={() => setModalVisible(true)}
             >
-                <Text style={{...styles.rowText, color: colors.danger, fontWeight: '700'}}>Deletar Conta</Text>
+                <Text style={{...styles.rowText, color: colors.danger, fontWeight: '700'}}>{t('settings.deleteAccount')}</Text>
             </TouchableOpacity>
         </View>
 
         <View style={styles.versionContainer}>
             <Icon name="cellphone-check" size={28} color={colors.placeholder} style={{ marginBottom: 5 }} />
-            <Text style={styles.versionText}>Versão 1.0.0</Text>
-            <Text style={styles.copyrightText}>© 2026 Elo App. Todos os direitos reservados.</Text>
+            <Text style={styles.versionText}>{t('common.version')} 1.0.0</Text>
+            <Text style={styles.copyrightText}>{t('common.copyright')}</Text>
         </View>
 
       </ScrollView>
@@ -349,9 +368,9 @@ const SettingsScreen = () => {
             <View style={styles.modalContainer}>
                 <Icon name="alert-circle-outline" size={50} color="#FF4444" style={{ marginBottom: 15 }} />
                 
-                <Text style={styles.modalTitle}>Excluir conta?</Text>
+                <Text style={styles.modalTitle}>{t('settings.deleteConfirmTitle')}</Text>
                 <Text style={styles.modalMessage}>
-                    Tem certeza que deseja deletar sua conta? Essa ação não pode ser desfeita.
+                    {t('settings.deleteConfirmMessage')}
                 </Text>
 
                 <View style={styles.modalButtonContainer}>
@@ -360,7 +379,7 @@ const SettingsScreen = () => {
                         style={[styles.modalButton, styles.cancelButton]}
                         onPress={() => setModalVisible(false)}
                     >
-                        <Text style={styles.cancelButtonText}>Não</Text>
+                        <Text style={styles.cancelButtonText}>{t('common.no')}</Text>
                     </TouchableOpacity>
 
                     {/* Botão SIM */}
@@ -368,9 +387,59 @@ const SettingsScreen = () => {
                         style={[styles.modalButton, styles.confirmButton]}
                         onPress={handleDeleteAccount}
                     >
-                        <Text style={styles.confirmButtonText}>Sim</Text>
+                        <Text style={styles.confirmButtonText}>{t('common.yes')}</Text>
                     </TouchableOpacity>
                 </View>
+            </View>
+        </View>
+      </Modal>
+
+      {/* --- MODAL DE IDIOMA --- */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={languageModalVisible}
+        onRequestClose={() => setLanguageModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>{t('settings.selectLanguage')}</Text>
+                
+                {LANGUAGES.map((lang) => (
+                  <TouchableOpacity
+                    key={lang.code}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 14,
+                      paddingHorizontal: 16,
+                      width: '100%',
+                      borderBottomWidth: 1,
+                      borderBottomColor: colors.separator,
+                      backgroundColor: i18n.language === lang.code ? (theme === 'dark' ? 'rgba(29,185,84,0.15)' : 'rgba(29,185,84,0.08)') : 'transparent',
+                      borderRadius: 10,
+                    }}
+                    onPress={() => {
+                      changeLanguage(lang.code);
+                      setLanguageModalVisible(false);
+                    }}
+                  >
+                    <Text style={{ fontSize: 22, marginRight: 12 }}>{lang.flag}</Text>
+                    <Text style={{ fontSize: 15, fontWeight: i18n.language === lang.code ? '700' : '500', color: i18n.language === lang.code ? colors.primary : colors.text, flex: 1 }}>
+                      {lang.label}
+                    </Text>
+                    {i18n.language === lang.code && (
+                      <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+
+                <TouchableOpacity
+                  style={{ marginTop: 16, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.inputBackground, borderRadius: 14 }}
+                  onPress={() => setLanguageModalVisible(false)}
+                >
+                  <Text style={{ color: colors.text, fontWeight: '700' }}>{t('common.close')}</Text>
+                </TouchableOpacity>
             </View>
         </View>
       </Modal>
