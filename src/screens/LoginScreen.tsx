@@ -146,8 +146,8 @@ const LoginScreen = () => {
         <Text style={styles.title}>{t('login.welcome')}</Text>
         <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
 
-        <StyledInput icon="person-outline" placeholder={t('login.emailPlaceholder')} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-        <StyledInput icon="lock-closed-outline" placeholder={t('login.passwordPlaceholder')} isPassword={true} value={password} onChangeText={setPassword} />
+        <StyledInput key="login-email" icon="person-outline" placeholder={t('login.emailPlaceholder')} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+        <StyledInput key="login-password" icon="lock-closed-outline" placeholder={t('login.passwordPlaceholder')} isPassword={true} value={password} onChangeText={setPassword} />
 
         <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
           <Text style={styles.forgotPassword}>{t('login.forgotPassword')}</Text>

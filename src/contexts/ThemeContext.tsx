@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useMemo, useCallback } from 'react';
 
 // Define the structure of our themes
 interface ThemeColors {
@@ -116,14 +116,20 @@ const ThemeContext = createContext<ThemeContextData>({} as ThemeContextData);
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme(currentTheme => (currentTheme === 'light' ? 'dark' : 'light'));
-  };
+  }, []);
 
   const colors = themes[theme];
 
+  const value = useMemo(() => ({
+    theme,
+    colors,
+    toggleTheme,
+  }), [theme, colors, toggleTheme]);
+
   return (
-    <ThemeContext.Provider value={{ theme, colors, toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

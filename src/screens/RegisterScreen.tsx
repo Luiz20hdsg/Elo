@@ -187,10 +187,10 @@ const RegisterScreen = () => {
         <Text style={styles.subtitle}>{t('register.subtitle')}</Text>
         <Text style={styles.title}>{t('register.title')}</Text>
 
-        <StyledInput icon="person-outline" placeholder={t('register.usernamePlaceholder')} autoCapitalize="none" value={username} onChangeText={setUsername} />
-        <StyledInput icon="mail-outline" placeholder={t('register.emailPlaceholder')} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
-        <StyledInput icon="calendar-outline" placeholder={t('register.birthDatePlaceholder')} autoCapitalize="none" value={birthDate} onChangeText={setBirthDate} maxLength={10} keyboardType="numeric" />
-        <StyledInput icon="lock-closed-outline" placeholder={t('register.passwordPlaceholder')} isPassword={true} value={password} onChangeText={setPassword} />
+        <StyledInput key="register-username" icon="person-outline" placeholder={t('register.usernamePlaceholder')} autoCapitalize="none" value={username} onChangeText={setUsername} />
+        <StyledInput key="register-email" icon="mail-outline" placeholder={t('register.emailPlaceholder')} keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+        <StyledInput key="register-birthdate" icon="calendar-outline" placeholder={t('register.birthDatePlaceholder')} autoCapitalize="none" value={birthDate} onChangeText={setBirthDate} maxLength={10} keyboardType="numeric" />
+        <StyledInput key="register-password" icon="lock-closed-outline" placeholder={t('register.passwordPlaceholder')} isPassword={true} value={password} onChangeText={setPassword} />
 
         <View style={styles.buttonContainer}>
           <StyledButton title={loading ? t('register.registering') : t('register.register')} onPress={handleSignUp} disabled={loading} />

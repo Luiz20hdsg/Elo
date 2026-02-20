@@ -8,12 +8,11 @@ interface StyledInputProps extends TextInputProps {
   isPassword?: boolean;
 }
 
-const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, style, ...props }) => {
-  const [isFocused, setIsFocused] = useState(false);
+const StyledInput: React.FC<StyledInputProps> = React.memo(({ icon, isPassword = false, style, ...props }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const { colors, theme } = useTheme();
+  const { colors } = useTheme();
 
-  const iconColor = isFocused ? colors.primary : colors.placeholder;
+  const iconColor = colors.placeholder;
 
   // Static styles – only recreated when the theme changes, NOT on focus change
   const styles = useMemo(() => StyleSheet.create({
@@ -26,14 +25,6 @@ const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, sty
       marginVertical: 8,
       borderWidth: 1.5,
       borderColor: 'transparent',
-    },
-    containerFocused: {
-      borderColor: colors.primary,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 3,
     },
     icon: {
       marginRight: 12,
@@ -48,17 +39,15 @@ const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, sty
     eyeIcon: {
       padding: 6,
     }
-  }), [colors, theme]);
+  }), [colors]);
 
   return (
-    <View style={[styles.container, isFocused && styles.containerFocused]}>
+    <View style={styles.container}>
       {icon && <Ionicons name={icon} size={20} color={iconColor} style={styles.icon} />}
       <TextInput
         style={[styles.input, style]}
         placeholderTextColor={colors.placeholder}
         secureTextEntry={isPassword && !isPasswordVisible}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
         {...props}
       />
       {isPassword && (
@@ -68,6 +57,6 @@ const StyledInput: React.FC<StyledInputProps> = ({ icon, isPassword = false, sty
       )}
     </View>
   );
-};
+});
 
 export default StyledInput;

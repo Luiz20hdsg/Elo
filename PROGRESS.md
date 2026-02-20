@@ -222,53 +222,23 @@ A migração `00011_definitive_migration.sql` é autossuficiente e cobre **toda*
 
 Todas as telas e componentes receberam um refinamento visual completo, elevando a qualidade da UI para nível premium.
 
-#### Componentes Base:
+(... Conteúdo Omitido ...)
 
-1. **`ThemeContext.tsx` — Paleta expandida (30+ cores):**
-   - Adicionadas: `secondaryText`, `border`, `surface`, `surfaceElevated`, `accent`, `shadow`, `gradientStart`, `gradientEnd`, `danger`, `success`, `warning`, `overlay`, `tabBarBorder`, `inputBorder`, `highlight`, `cardBorder`, `avatarBorder`, `messageMyBubble`, `messageTheirBubble`, `messageMyText`, `messageTheirText`.
-   - Tema escuro: tons de marinho profundo (`#0A0A0F` bg) em vez de preto puro.
-   - Tema claro: off-white (`#FAFAFA`) em vez de branco puro.
-   - Corrigido placeholder do tema escuro de `#FFFFFF` para `#8E8E93`.
-
-2. **`StyledButton.tsx` — Animação e formato pill:**
-   - Animação de press (scale 0.97).
-   - `borderRadius: 28` (pill shape).
-   - Sombra/elevation.
-   - Texto de botão sólido sempre branco.
-
-3. **`StyledInput.tsx` — Foco aprimorado:**
-   - `borderRadius: 14`.
-   - Borda usa `colors.inputBorder` (normal) / `colors.primary` (foco).
-   - Sombra suave no foco.
-   - Melhor espaçamento e altura.
-
-4. **`TabNavigator.tsx` — Tab bar elevada:**
-   - Sombra e elevação.
-   - Altura 65 com padding.
-   - Borda superior sutil.
-   - Labels ocultos (ícones only, tamanho 26).
-
-#### Telas Polidas:
-
-5. **`InitialScreen.tsx`** — Overlay gradiente, logo "elo", tagline, botão pill com sombra.
-6. **`LoginScreen.tsx`** — Reordenado (logo→título→subtítulo), botões sociais com cantos arredondados.
-7. **`RegisterScreen.tsx`** — Mesmo refinamento de Login.
-8. **`ProfileScreen.tsx`** — Header "Meu Perfil", cards com surface/sombra, banner gradiente, removido logout redundante do header.
-9. **`PeopleScreen.tsx`** — Renomeado "Descobrir", info container com sombras, chips melhores, modal de filtro refinado, empty state.
-10. **`ChatsScreen.tsx`** — Bordas gradiente nos matches, avatares arredondados, empty state melhor.
-11. **`ChatDetailScreen.tsx`** — Bolhas melhores, corrigido `color: 'inherit'` inválido, input/send refinados.
-12. **`SettingsScreen.tsx`** — Seções com fundo arredondado, botão "Sair da Conta" dedicado no corpo, modal refinado.
-13. **`EditProfileScreen.tsx`** — Labels com secondaryText, grid de fotos com sombras, corrigido `useFocusEffect(fetchProfile)`.
-14. **`PhotoTipsScreen.tsx`** — Cards com surface colors, ícones com fundo, botão refinado.
-15. **`ForgotPasswordScreen.tsx`** — Input arredondado, espaçamento melhor.
-16. **`ChangePasswordScreen.tsx`** — Containers arredondados, espaçamento melhor.
-17. **`SummaryScreen.tsx`** — Cores do tema, botão pill, hobby cards com borda primary, input refinado.
-
-#### Outras Correções:
-
-- Removido `import LinearGradient` errôneo do `InitialScreen.tsx`.
-- Removidos botões de logout redundantes dos headers (mantido apenas em Ajustes no corpo).
 - Corrigido `useFocusEffect(fetchProfile)` no `EditProfileScreen.tsx` — wrapeado com `React.useCallback`.
+
+### Correção de Desempenho (Sessão 4 - 19/02/2026)
+
+#### Otimização de Renderização de Componentes e Contexto:
+
+- **Problema:** O teclado era dispensado inesperadamente e a seleção de texto ficava descontrolada ao digitar nos campos de texto (inputs) nas telas de Login e Cadastro.
+- **Causa Raiz:** Múltiplos componentes estavam sendo re-renderizados a cada toque de tecla, causando a perda de foco dos inputs. A investigação revelou duas causas principais:
+    1.  **Componente `StyledInput`:** Não estava memoizado. Como as telas de Login/Cadastro armazenam o valor do input em seu estado, elas re-renderizavam a cada mudança, forçando uma re-renderização do `StyledInput`.
+    2.  **Contexto `ThemeContext`:** O objeto `value` fornecido ao `ThemeContext.Provider` era um objeto literal (`{...}`), que era recriado em toda renderização. Isso forçava a re-renderização de todos os componentes que consumiam o contexto (incluindo o `StyledInput`), mesmo que os valores dentro do objeto não tivessem mudado.
+- **Solução Aplicada:**
+    1.  **`StyledInput.tsx`:** O componente foi envolvido em `React.memo` para evitar re-renderizações desnecessárias quando seus adereços (props) permanecem os mesmos. Adicionalmente, a pedido do usuário, o feedback visual de foco (borda com a cor primária e sombra) foi removido para simplificar a interface e garantir que não houvesse efeitos visuais indesejados.
+    2.  **`ThemeContext.tsx`:** O valor do provedor de contexto foi memoizado usando `React.useMemo`, e a função `toggleTheme` foi envolvida em `React.useCallback`. Isso garante que o objeto de contexto só seja atualizado quando seus valores realmente mudarem, estabilizando os consumidores do contexto.
+
+Essa abordagem dupla resolveu o problema de perda de foco, melhorou a fluidez da digitação e otimizou o desempenho geral do aplicativo, prevenindo renderizações em cascata.
 
 **Nota:** A migração `00007` foi substituída por `00009`, que por sua vez foi substituída por `00010`. A migração `00010` é a versão final e definitiva das funções RPC.
 
